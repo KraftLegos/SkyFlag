@@ -7,10 +7,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Main extends JavaPlugin {
+public final class Main extends JavaPlugin {
 
     private static Main instance;
     private Set<Game> games = new HashSet<>();
+    private int gamesList = 0;
 
     @Override
     public void onEnable() {
@@ -22,7 +23,12 @@ public class Main extends JavaPlugin {
 
         getCommand("join").setExecutor(new Join());
         getLogger();
+
+        Game game = new Game("one");
+        this.registerGame(game);
     }
+
+
 
     @Override
     public void onDisable() {
@@ -35,6 +41,15 @@ public class Main extends JavaPlugin {
 
     public static Main get() {
         return instance;
+    }
+
+    public boolean registerGame(Game game) {
+        if (games.size() == gamesList && gamesList != 1) {
+            return false;
+        }
+        games.add(game);
+
+        return true;
     }
 
 
