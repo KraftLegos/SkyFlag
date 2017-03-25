@@ -1,5 +1,7 @@
 package com.github.kraftlegos.object;
 
+import com.github.kraftlegos.utility.ChatUtil;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public class GamePlayer {
@@ -22,6 +24,22 @@ public class GamePlayer {
 
     public GameTeam getTeam() {
         return team;
+    }
+
+    public void sendMessage(String message) {
+        if (isTeamClass()) {
+            player.sendMessage(ChatUtil.format(message));
+        } else {
+            ChatUtil.format(message);
+        }
+    }
+
+    public void teleport(Location location) {
+        if(isTeamClass()) {
+            getPlayer().teleport(location);
+        } else {
+            getTeam().teleport(location);
+        }
     }
 
     public enum GamePlayerState {
