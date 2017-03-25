@@ -55,7 +55,7 @@ public class Game {
     public boolean joinGame(GamePlayer gamePlayer) {
         if (gamePlayer.isTeamClass() && !isTeamGame) {
             gamePlayer.sendMessage("TEST");
-        return false;
+            return false;
         }
 
         if (isState(GameState.LOBBY) || isState(GameState.STARTING)) {
@@ -63,9 +63,13 @@ public class Game {
                 gamePlayer.sendMessage("&cThis game has already started! Please try again in a few minutes!");
                 return false;
             }
-            gamePlayer.teleport(isState(gameState.LOBBY) ? lobbyPoint : null);
+            if (isState(gameState.LOBBY)) {
+                gamePlayer.teleport(lobbyPoint);
+            } else {
+                gamePlayer.teleport(null);
+            }
             getPlayers().add(gamePlayer);
-            sendMessage(gamePlayer.getPlayer().getCustomName() + "&ejoined! (" + getPlayers().size() + "/" +  getMaxPlayers() + ")");
+            sendMessage(gamePlayer.getPlayer().getCustomName() + "&ejoined! (" + getPlayers().size() + "/" + getMaxPlayers() + ")");
 
             if (getPlayers().size() == getMinPlayers() && !isState(GameState.STARTING)) {
                 setState(GameState.STARTING);

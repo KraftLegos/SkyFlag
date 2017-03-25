@@ -16,8 +16,7 @@ import java.io.IOException;
 public class Join implements CommandExecutor {
 
     private int players;
-
-
+    
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
         if (!(sender instanceof Player)) {
