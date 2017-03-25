@@ -1,6 +1,7 @@
 package com.github.kraftlegos;
 
 import com.github.kraftlegos.commands.Join;
+import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -25,6 +26,7 @@ public final class Main extends JavaPlugin {
         getLogger();
 
         Game game = new Game("one");
+        GameManager.addGame(game);
         this.registerGame(game);
         game.setState(Game.GameState.LOBBY);
     }

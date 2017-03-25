@@ -1,6 +1,7 @@
 package com.github.kraftlegos.commands;
 
 import com.github.kraftlegos.Main;
+import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
 import com.github.kraftlegos.object.GamePlayer;
 import org.bukkit.Bukkit;
@@ -17,8 +18,6 @@ public class Join implements CommandExecutor {
     private int players;
 
 
-    Game game = new Game("one");
-
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
         if (!(sender instanceof Player)) {
@@ -32,7 +31,7 @@ public class Join implements CommandExecutor {
         Player p = (Player) sender;
         GamePlayer gamePlayer = new GamePlayer(p);
 
-        game.joinGame(gamePlayer);
+        GameManager.getGame().joinGame(gamePlayer);
 
         //Bukkit.getServer().broadcastMessage(p.getCustomName() + ChatColor.YELLOW + " joined! (" + ChatColor.GREEN + players++ + "/16" + ChatColor.YELLOW + ")");
         return true;

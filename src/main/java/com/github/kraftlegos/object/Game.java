@@ -6,11 +6,10 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import java.util.ArrayList;
-import java.util.Set;
 
 public class Game {
 
-    private String displayname;
+    private String displayName;
     private int maxPlayers;
     private int minPlayers;
     private World world;
@@ -24,8 +23,9 @@ public class Game {
     private ArrayList<GameTeam> team = new ArrayList<>();
     private GameState gameState;
 
-    public Game(String gamename) {
+    public Game(String gameName) {
         //FileConfiguration fileConfiguration = DataHandler.getInstance().getGameInfo();
+        this.displayName = gameName;
         this.maxPlayers = 16;
         this.minPlayers = 2;
         this.world = Bukkit.getServer().getWorld("world");
@@ -113,7 +113,7 @@ public class Game {
     }
 
     public String getDisplayname() {
-        return displayname;
+        return displayName;
     }
 
     public GameState getGameState() {
