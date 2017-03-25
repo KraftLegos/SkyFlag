@@ -4,8 +4,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class Game {
 
@@ -18,9 +20,9 @@ public class Game {
     private Location lobbyPoint;
 
     //Active Game Objects
-    private ArrayList<GamePlayer> players = new ArrayList<>();
-    private ArrayList<GamePlayer> spectators = new ArrayList<>();
-    private ArrayList<GameTeam> team = new ArrayList<>();
+    public ArrayList<Player> players = new ArrayList<>();
+    public ArrayList<Player> spectators = new ArrayList<>();
+    public ArrayList<GameTeam> team = new ArrayList<>();
     private GameState gameState;
 
     public Game(String gameName) {
@@ -62,7 +64,9 @@ public class Game {
         //    return false;
         //}
 
-        if (isState(GameState.LOBBY) || isState(GameState.STARTING) || players.contains(gamePlayer)) {
+        Bukkit.getServer().broadcastMessage(players.toString());
+
+        if (isState(GameState.LOBBY) || isState(GameState.STARTING) || players.contains(gamePlayer.toString())) {
 
             if (getPlayers().size() == getMaxPlayers()) {
                 gamePlayer.sendMessage("&cThis game has already started! Please try again in a few minutes!");
@@ -103,7 +107,7 @@ public class Game {
         this.gameState = state;
     }
 
-    public ArrayList<GamePlayer> getPlayers() {
+    public ArrayList<Player> getPlayers() {
         return players;
     }
 
@@ -111,7 +115,7 @@ public class Game {
         return maxPlayers;
     }
 
-    public ArrayList<GamePlayer> getSpectators() {
+    public ArrayList<Player> getSpectators() {
         return spectators;
     }
 
@@ -136,8 +140,8 @@ public class Game {
     }
 
     public void sendMessage(String message) {
-        for (GamePlayer gamePlayer : getPlayers()) {
-            gamePlayer.sendMessage(message);
+        for (Player player : getPlayers()) {
+            player.sendMessage(message);
         }
     }
 
