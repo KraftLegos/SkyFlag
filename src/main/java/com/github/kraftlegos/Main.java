@@ -1,7 +1,7 @@
 package com.github.kraftlegos;
 
 import com.github.kraftlegos.commands.Join;
-import com.github.kraftlegos.constructors.Game;
+import com.github.kraftlegos.object.Game;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashSet;
