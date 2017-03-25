@@ -28,9 +28,9 @@ public class Join implements CommandExecutor {
         //    sender.sendMessage(ChatColor.RED + "This minigame is currently full! Please try again later!");
         //}
         Player p = (Player) sender;
-        GamePlayer gamePlayer = new GamePlayer(p);
+        GamePlayer g = new GamePlayer(p);
 
-        GameManager.getGame().joinGame(gamePlayer);
+        GameManager.getGame().joinGame(g);
 
         //Bukkit.getServer().broadcastMessage(p.getCustomName() + ChatColor.YELLOW + " joined! (" + ChatColor.GREEN + players++ + "/16" + ChatColor.YELLOW + ")");
         return true;

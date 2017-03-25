@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="SkyFlag:jar">
-    <output-path>$PROJECT_DIR$/artifacts/SkyFlag_jar</output-path>
+    <output-path>$USER_HOME$/Desktop/Desktop/Desktop Servers/Test Bukkit/plugins</output-path>
     <root id="archive" name="SkyFlag.jar">
       <element id="module-output" name="SkyFlag" />
     </root>

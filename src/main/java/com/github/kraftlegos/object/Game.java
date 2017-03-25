@@ -39,9 +39,9 @@ public class Game {
         double bluey = 0.0;
         double bluez = 0.0;
 
-        double lobbyx = 0.0;
-        double lobbyy = 0.0;
-        double lobbyz = 0.0;
+        double lobbyx = -48.5;
+        double lobbyy = 153.0;
+        double lobbyz = 596.5;
         //TODO Locations of spawnpoints in the world
 
         Location redSpawn = new Location(world, redx, redy, redz);
@@ -49,31 +49,38 @@ public class Game {
         Location lobbySpawn = new Location(world, lobbyx, lobbyy, lobbyz);
         spawnPoints.add(redSpawn);
         spawnPoints.add(blueSpawn);
-        spawnPoints.add(lobbySpawn);
+        this.lobbyPoint = lobbySpawn;
     }
 
     public boolean joinGame(GamePlayer gamePlayer) {
-        if (gamePlayer.isTeamClass() && !isTeamGame) {
-            gamePlayer.sendMessage("TEST");
-            return false;
-        }
+        //if (gamePlayer.isTeamClass() && !isTeamGame) {
+        //    gamePlayer.sendMessage("TEST");
+        //    return false;
+        //}
 
-        if (isState(GameState.LOBBY) || isState(GameState.STARTING)) {
+        //if (getPlayers().contains(gamePlayer)) {
+        //    return false;
+        //}
+
+        if (isState(GameState.LOBBY) || isState(GameState.STARTING) || players.contains(gamePlayer)) {
+
             if (getPlayers().size() == getMaxPlayers()) {
                 gamePlayer.sendMessage("&cThis game has already started! Please try again in a few minutes!");
                 return false;
             }
-            if (isState(gameState.LOBBY)) {
-                gamePlayer.teleport(lobbyPoint);
-            } else {
-                gamePlayer.teleport(null);
+            if (isState(gameState.LOBBY) || isState(gameState.STARTING)) {
+                gamePlayer.teleport(lobbyPoint, gamePlayer);
+            } else if (isState(gameState.ACTIVE) || isState(gameState.DEATHMATCH) || isState(gameState.ENDING)){
+                gamePlayer.teleport(spawnPoints.get(1), gamePlayer);
+                gamePlayer.sendMessage("You are now a spectator!");
+                return false;
             }
             getPlayers().add(gamePlayer);
-            sendMessage(gamePlayer.getPlayer().getCustomName() + "&ejoined! (" + getPlayers().size() + "/" + getMaxPlayers() + ")");
+            Bukkit.getServer().broadcastMessage(gamePlayer.getPlayer().getCustomName() + ChatColor.YELLOW + " joined! (" + getPlayers().size() + "/" + getMaxPlayers() + ")");
 
             if (getPlayers().size() == getMinPlayers() && !isState(GameState.STARTING)) {
                 setState(GameState.STARTING);
-                sendMessage(ChatColor.GREEN + "The game will now start in 30 seconds...");
+                Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "The game will now start in 30 seconds...");
             }
             return true;
         } else {

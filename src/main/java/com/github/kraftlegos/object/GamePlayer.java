@@ -28,18 +28,14 @@ public class GamePlayer {
 
     public void sendMessage(String message) {
         if (isTeamClass()) {
-            player.sendMessage(ChatUtil.format(message));
+            player.sendMessage(message);
         } else {
             ChatUtil.format(message);
         }
     }
 
-    public void teleport(Location location) {
-        if(isTeamClass()) {
-            getPlayer().teleport(location);
-        } else {
-            getTeam().teleport(location);
-        }
+    public void teleport(Location location, GamePlayer p) {
+        p.getPlayer().teleport(location);
     }
 
     public enum GamePlayerState {

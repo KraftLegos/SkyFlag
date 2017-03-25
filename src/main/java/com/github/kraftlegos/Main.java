@@ -1,8 +1,10 @@
 package com.github.kraftlegos;
 
 import com.github.kraftlegos.commands.Join;
+import com.github.kraftlegos.listeners.onJoin;
 import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashSet;
@@ -21,6 +23,10 @@ public final class Main extends JavaPlugin {
         //getConfig().options().copyDefaults(true);
         //getConfig().options().copyHeader(true);
         //saveDefaultConfig();
+
+        PluginManager pm = getServer().getPluginManager();
+
+        pm.registerEvents( new onJoin(), this);
 
         getCommand("join").setExecutor(new Join());
         getLogger();
