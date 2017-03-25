@@ -3,3 +3,6 @@ version: 1.0
 author: Kraft
 name: SkyFlag
 description: Skyflag minigame plugin!
+commands:
+  join:
+    description: Let's you join a game!

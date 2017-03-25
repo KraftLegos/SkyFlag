@@ -17,15 +17,16 @@ public final class Main extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        getConfig().options().copyDefaults(true);
-        getConfig().options().copyHeader(true);
-        saveDefaultConfig();
+        //getConfig().options().copyDefaults(true);
+        //getConfig().options().copyHeader(true);
+        //saveDefaultConfig();
 
         getCommand("join").setExecutor(new Join());
         getLogger();
 
         Game game = new Game("one");
         this.registerGame(game);
+        game.setState(Game.GameState.LOBBY);
     }
 
 

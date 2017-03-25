@@ -1,5 +1,8 @@
 package com.github.kraftlegos.commands;
 
+import com.github.kraftlegos.Main;
+import com.github.kraftlegos.object.Game;
+import com.github.kraftlegos.object.GamePlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -13,6 +16,9 @@ public class Join implements CommandExecutor {
 
     private int players;
 
+
+    Game game = new Game("one");
+
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
         if (!(sender instanceof Player)) {
@@ -20,20 +26,16 @@ public class Join implements CommandExecutor {
             return true;
         }
 
-        if (players < 16) {
-            sender.sendMessage(ChatColor.RED + "This minigame is currently full! Please try again later!");
-        }
+        //if (players < 16) {
+        //    sender.sendMessage(ChatColor.RED + "This minigame is currently full! Please try again later!");
+        //}
         Player p = (Player) sender;
-/*
-        try {
-            ArenaManager.add(p);
-        } catch (IOException error) {
-            p.sendMessage(ChatColor.RED + "A fatal error occured and you were not placed in the game. Please report this to a developer!");
-            Bukkit.getServer().getLogger().severe(error.getMessage());
-        }
-*/
+        GamePlayer gamePlayer = new GamePlayer(p);
 
-        Bukkit.getServer().broadcastMessage(p.getCustomName() + ChatColor.YELLOW + " joined! (" + ChatColor.GREEN + players++ + "/16" + ChatColor.YELLOW + ")");
+
+        game.joinGame(gamePlayer);
+
+        //Bukkit.getServer().broadcastMessage(p.getCustomName() + ChatColor.YELLOW + " joined! (" + ChatColor.GREEN + players++ + "/16" + ChatColor.YELLOW + ")");
         return true;
     }
 }

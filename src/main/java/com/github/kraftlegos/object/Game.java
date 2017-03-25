@@ -4,9 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
 
-import javax.activation.DataHandler;
 import java.util.Set;
 
 public class Game {
@@ -50,6 +48,7 @@ public class Game {
         Location lobbySpawn = new Location(world, lobbyx, lobbyy, lobbyz);
         spawnPoints.add(redSpawn);
         spawnPoints.add(blueSpawn);
+        spawnPoints.add(lobbySpawn);
     }
 
     public boolean joinGame(GamePlayer gamePlayer) {
@@ -73,6 +72,7 @@ public class Game {
             return true;
         } else {
             getSpectators().add(gamePlayer);
+            gamePlayer.sendMessage("YOU ARE NOW A SPECTATOR");
             //TODO: Process as spectator
             return true;
         }
@@ -80,6 +80,10 @@ public class Game {
 
     public void startCountdown() {
         //TODO
+    }
+
+    public Game getGame() {
+        return this;
     }
 
     public void setState(GameState state) {
