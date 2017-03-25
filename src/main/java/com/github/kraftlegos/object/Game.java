@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import java.util.ArrayList;
 import java.util.Set;
 
 public class Game {
@@ -13,14 +14,14 @@ public class Game {
     private int maxPlayers;
     private int minPlayers;
     private World world;
-    private Set<Location> spawnPoints;
+    private ArrayList<Location> spawnPoints = new ArrayList<>();
     private boolean isTeamGame;
     private Location lobbyPoint;
 
     //Active Game Objects
-    private Set<GamePlayer> players;
-    private Set<GamePlayer> spectators;
-    private Set<GameTeam> team;
+    private ArrayList<GamePlayer> players = new ArrayList<>();
+    private ArrayList<GamePlayer> spectators = new ArrayList<>();
+    private ArrayList<GameTeam> team = new ArrayList<>();
     private GameState gameState;
 
     public Game(String gamename) {
@@ -53,6 +54,7 @@ public class Game {
 
     public boolean joinGame(GamePlayer gamePlayer) {
         if (gamePlayer.isTeamClass() && !isTeamGame) {
+            gamePlayer.sendMessage("TEST");
         return false;
         }
 
@@ -90,7 +92,7 @@ public class Game {
         this.gameState = state;
     }
 
-    public Set<GamePlayer> getPlayers() {
+    public ArrayList<GamePlayer> getPlayers() {
         return players;
     }
 
@@ -98,7 +100,7 @@ public class Game {
         return maxPlayers;
     }
 
-    public Set<GamePlayer> getSpectators() {
+    public ArrayList<GamePlayer> getSpectators() {
         return spectators;
     }
 

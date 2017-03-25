@@ -32,7 +32,6 @@ public class Join implements CommandExecutor {
         Player p = (Player) sender;
         GamePlayer gamePlayer = new GamePlayer(p);
 
-
         game.joinGame(gamePlayer);
 
         //Bukkit.getServer().broadcastMessage(p.getCustomName() + ChatColor.YELLOW + " joined! (" + ChatColor.GREEN + players++ + "/16" + ChatColor.YELLOW + ")");
