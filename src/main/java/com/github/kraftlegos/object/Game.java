@@ -66,7 +66,9 @@ public class Game {
 
         Bukkit.getServer().broadcastMessage(players.toString());
 
-        if (isState(GameState.LOBBY) || isState(GameState.STARTING) || players.contains(gamePlayer.toString())) {
+        Player p = gamePlayer.getPlayer();
+
+        if (isState(GameState.LOBBY) || isState(GameState.STARTING) || players.contains(p)) {
 
             if (getPlayers().size() == getMaxPlayers()) {
                 gamePlayer.sendMessage("&cThis game has already started! Please try again in a few minutes!");
@@ -79,7 +81,7 @@ public class Game {
                 gamePlayer.sendMessage("You are now a spectator!");
                 return false;
             }
-            getPlayers().add(gamePlayer);
+            getPlayers().add(p);
             Bukkit.getServer().broadcastMessage(gamePlayer.getPlayer().getCustomName() + ChatColor.YELLOW + " joined! (" + getPlayers().size() + "/" + getMaxPlayers() + ")");
 
             if (getPlayers().size() == getMinPlayers() && !isState(GameState.STARTING)) {
@@ -88,7 +90,7 @@ public class Game {
             }
             return true;
         } else {
-            getSpectators().add(gamePlayer);
+            getSpectators().add(p);
             gamePlayer.sendMessage("YOU ARE NOW A SPECTATOR");
             //TODO: Process as spectator
             return true;
