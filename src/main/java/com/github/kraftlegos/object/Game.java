@@ -7,10 +7,13 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class Game {
 
+    //Active Game Objects
+    public ArrayList<Player> players = new ArrayList<>();
+    public ArrayList<Player> spectators = new ArrayList<>();
+    public ArrayList<GameTeam> team = new ArrayList<>();
     private String displayName;
     private int maxPlayers;
     private int minPlayers;
@@ -18,11 +21,6 @@ public class Game {
     private ArrayList<Location> spawnPoints = new ArrayList<>();
     private boolean isTeamGame;
     private Location lobbyPoint;
-
-    //Active Game Objects
-    public ArrayList<Player> players = new ArrayList<>();
-    public ArrayList<Player> spectators = new ArrayList<>();
-    public ArrayList<GameTeam> team = new ArrayList<>();
     private GameState gameState;
 
     public Game(String gameName) {
@@ -64,37 +62,36 @@ public class Game {
         //    return false;
         //}
 
-        Bukkit.getServer().broadcastMessage(players.toString());
+        //DEBUG: Bukkit.getServer().broadcastMessage(players.toString());
 
         Player p = gamePlayer.getPlayer();
 
-        if (isState(GameState.LOBBY) || isState(GameState.STARTING) && !players.contains(p)) {
+        if (isState(GameState.LOBBY) || isState(GameState.STARTING)) {
+            if (players.contains(p)) {
+                p.sendMessage(ChatColor.RED + "You are already in the game!");
+                return false;
+            }
 
             if (getPlayers().size() == getMaxPlayers()) {
                 p.sendMessage("&cThis game has already started! Please try again in a few minutes!");
                 return false;
             }
-            if (isState(gameState.LOBBY) || isState(gameState.STARTING)) {
-                gamePlayer.teleport(lobbyPoint, gamePlayer);
-            } else if (isState(gameState.ACTIVE) || isState(gameState.DEATHMATCH) || isState(gameState.ENDING)){
-                gamePlayer.teleport(spawnPoints.get(1), gamePlayer);
-                p.sendMessage("You are now a spectator!");
-                return false;
-            }
-            getPlayers().add(p);
+            gamePlayer.teleport(lobbyPoint, gamePlayer);
+            players.add(p);
             Bukkit.getServer().broadcastMessage(gamePlayer.getPlayer().getCustomName() + ChatColor.YELLOW + " joined! (" + getPlayers().size() + "/" + getMaxPlayers() + ")");
 
             if (getPlayers().size() == getMinPlayers() && !isState(GameState.STARTING)) {
                 setState(GameState.STARTING);
                 Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "The game will now start in 30 seconds...");
             }
-            return true;
+        } else if (isState(gameState.ACTIVE) || isState(gameState.DEATHMATCH) || isState(gameState.ENDING)) {
+            gamePlayer.teleport(spawnPoints.get(1), gamePlayer);
+            p.sendMessage("You are now a spectator!");
+            return false;
         } else {
-            getSpectators().add(p);
-            p.sendMessage("YOU ARE NOW A SPECTATOR");
-            //TODO: Process as spectator
-            return true;
+            p.sendMessage("You are already in the game!");
         }
+        return true;
     }
 
     public void startCountdown() {

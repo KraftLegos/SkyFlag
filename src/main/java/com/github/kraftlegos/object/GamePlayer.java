@@ -10,9 +10,13 @@ public class GamePlayer {
     private GameTeam team = null;
     private GamePlayerState gamePlayerState;
 
-    public GamePlayer(Player player) { this.player = player;}
+    public GamePlayer(Player player) {
+        this.player = player;
+    }
 
-    public GamePlayer(GameTeam team) { this.team = team; }
+    public GamePlayer(GameTeam team) {
+        this.team = team;
+    }
 
     public boolean isTeamClass() {
         return team == null && player == null;

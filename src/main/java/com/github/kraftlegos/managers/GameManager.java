@@ -21,7 +21,7 @@ public class GameManager {
     }
 
     public static Game getGame() {
-        for(Game game : games) {
+        for (Game game : games) {
             if (game != null) {
                 return game;
             }

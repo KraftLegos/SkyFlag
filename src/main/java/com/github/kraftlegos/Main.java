@@ -16,6 +16,14 @@ public final class Main extends JavaPlugin {
     private Set<Game> games = new HashSet<>();
     private int gamesList = 0;
 
+    public static Main getInstance() {
+        return instance;
+    }
+
+    public static Main get() {
+        return instance;
+    }
+
     @Override
     public void onEnable() {
         instance = this;
@@ -26,7 +34,7 @@ public final class Main extends JavaPlugin {
 
         PluginManager pm = getServer().getPluginManager();
 
-        pm.registerEvents( new onJoin(), this);
+        pm.registerEvents(new onJoin(), this);
 
         getCommand("join").setExecutor(new Join());
         getLogger();
@@ -37,19 +45,11 @@ public final class Main extends JavaPlugin {
         game.setState(Game.GameState.LOBBY);
     }
 
-
-
     @Override
     public void onDisable() {
 
         instance = null;
 
-    }
-
-    public static Main getInstance() { return  instance; }
-
-    public static Main get() {
-        return instance;
     }
 
     public boolean registerGame(Game game) {

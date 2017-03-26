@@ -1,22 +1,16 @@
 package com.github.kraftlegos.commands;
 
-import com.github.kraftlegos.Main;
 import com.github.kraftlegos.managers.GameManager;
-import com.github.kraftlegos.object.Game;
 import com.github.kraftlegos.object.GamePlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.io.IOException;
-
 public class Join implements CommandExecutor {
 
     private int players;
-    
+
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
         if (!(sender instanceof Player)) {

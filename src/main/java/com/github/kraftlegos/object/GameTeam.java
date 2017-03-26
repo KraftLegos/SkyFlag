@@ -1,9 +1,7 @@
 package com.github.kraftlegos.object;
 
-import com.github.kraftlegos.managers.GameManager;
 import org.bukkit.Location;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class GameTeam {
