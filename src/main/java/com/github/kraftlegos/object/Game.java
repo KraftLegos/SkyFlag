@@ -68,17 +68,17 @@ public class Game {
 
         Player p = gamePlayer.getPlayer();
 
-        if (isState(GameState.LOBBY) || isState(GameState.STARTING) || players.contains(p)) {
+        if (isState(GameState.LOBBY) || isState(GameState.STARTING) && !players.contains(p)) {
 
             if (getPlayers().size() == getMaxPlayers()) {
-                gamePlayer.sendMessage("&cThis game has already started! Please try again in a few minutes!");
+                p.sendMessage("&cThis game has already started! Please try again in a few minutes!");
                 return false;
             }
             if (isState(gameState.LOBBY) || isState(gameState.STARTING)) {
                 gamePlayer.teleport(lobbyPoint, gamePlayer);
             } else if (isState(gameState.ACTIVE) || isState(gameState.DEATHMATCH) || isState(gameState.ENDING)){
                 gamePlayer.teleport(spawnPoints.get(1), gamePlayer);
-                gamePlayer.sendMessage("You are now a spectator!");
+                p.sendMessage("You are now a spectator!");
                 return false;
             }
             getPlayers().add(p);
@@ -91,7 +91,7 @@ public class Game {
             return true;
         } else {
             getSpectators().add(p);
-            gamePlayer.sendMessage("YOU ARE NOW A SPECTATOR");
+            p.sendMessage("YOU ARE NOW A SPECTATOR");
             //TODO: Process as spectator
             return true;
         }
