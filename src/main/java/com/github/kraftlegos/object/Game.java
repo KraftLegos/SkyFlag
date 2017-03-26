@@ -1,5 +1,6 @@
 package com.github.kraftlegos.object;
 
+import com.github.kraftlegos.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -22,6 +23,8 @@ public class Game {
     private boolean isTeamGame;
     private Location lobbyPoint;
     private GameState gameState;
+
+    private int timeUntilStart;
 
     public Game(String gameName) {
         //FileConfiguration fileConfiguration = DataHandler.getInstance().getGameInfo();
@@ -82,7 +85,8 @@ public class Game {
 
             if (getPlayers().size() == getMinPlayers() && !isState(GameState.STARTING)) {
                 setState(GameState.STARTING);
-                Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "The game will now start in 30 seconds...");
+                startCountdown();
+                Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "Minimum players reached! The game will now start in 30 seconds...");
             }
         } else if (isState(gameState.ACTIVE) || isState(gameState.DEATHMATCH) || isState(gameState.ENDING)) {
             gamePlayer.teleport(spawnPoints.get(1), gamePlayer);
@@ -95,7 +99,29 @@ public class Game {
     }
 
     public void startCountdown() {
-        //TODO
+        timeUntilStart = 30;
+        while(true) {
+            for(; timeUntilStart >= 0; timeUntilStart--) {
+                if(timeUntilStart == 0) {
+                    //TODO Start
+                    break;
+                }
+
+                if (timeUntilStart == 30 || timeUntilStart == 20 || timeUntilStart == 10 || timeUntilStart == 5 || timeUntilStart == 4 || timeUntilStart == 3 || timeUntilStart == 2 || timeUntilStart == 1) {
+                    sendMessage(ChatColor.YELLOW + "Starting in " + ChatColor.RED + timeUntilStart + ChatColor.YELLOW + " seconds!");
+                }
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    Bukkit.getLogger().severe("GAME CRASHED: READ ERROR ABOVE!");
+                    for (Player player : players) {
+                        player.kickPlayer("A fatal error occured, please report this to Kraft!");
+                    }
+                }
+            }
+        }
     }
 
     public Game getGame() {

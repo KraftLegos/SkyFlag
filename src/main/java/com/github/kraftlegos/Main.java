@@ -1,7 +1,7 @@
 package com.github.kraftlegos;
 
 import com.github.kraftlegos.commands.Join;
-import com.github.kraftlegos.listeners.onJoin;
+import com.github.kraftlegos.listeners.onQuit;
 import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
 import org.bukkit.plugin.PluginManager;
@@ -34,7 +34,7 @@ public final class Main extends JavaPlugin {
 
         PluginManager pm = getServer().getPluginManager();
 
-        pm.registerEvents(new onJoin(), this);
+        pm.registerEvents(new onQuit(), this);
 
         getCommand("join").setExecutor(new Join());
         getLogger();
