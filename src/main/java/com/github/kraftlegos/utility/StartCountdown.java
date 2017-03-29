@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Score;
+import org.bukkit.scoreboard.Scoreboard;
 
 /**
  * Created by kgils on 3/25/2017.
@@ -19,7 +20,11 @@ public class StartCountdown implements Runnable{
 
             timeUntilStart = 30;
             for (; timeUntilStart >= 0; timeUntilStart--) {
-                GameManager.getGame().board.resetScores(timeUntilStart-1 + " until start!");
+
+                Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
+                int time = timeUntilStart + 1;
+
+                scoreboard.resetScores(time + " until start!");
                 GameManager.getGame().line4 = GameManager.getGame().objective.getScore(timeUntilStart + " until start!");
                 GameManager.getGame().line4.setScore(4);
 
@@ -42,7 +47,6 @@ public class StartCountdown implements Runnable{
 
                 try {
                     Thread.sleep(1000);
-
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     Bukkit.getLogger().severe("GAME CRASHED: READ ERROR ABOVE!");

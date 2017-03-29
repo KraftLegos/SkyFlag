@@ -26,6 +26,12 @@ public class OnDeath implements Listener {
 
         this.t = e.getEntity();
 
+        if (GameManager.getGame().getGameState() != Game.GameState.STARTING || GameManager.getGame().getGameState() != Game.GameState.LOBBY){
+            if (!GameManager.getGame().players.contains(t.getName())) {
+                e.setDeathMessage(null);
+            }
+        }
+
         if (e.getDeathMessage().contains("was slain by")) {
             this.p = e.getEntity().getKiller();
             e.setDeathMessage(t.getCustomName() + ChatColor.YELLOW + " had their head chopped off by " + p.getCustomName());
