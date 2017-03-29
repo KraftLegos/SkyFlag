@@ -6,3 +6,10 @@ description: Skyflag minigame plugin!
 commands:
   join:
     description: Let's you join a game!
+  forcestart:
+    description: Force starts a game!
+
+permissions:
+  skyflag.forceop:
+    description: Allows you to forcestart a game
+    default: op

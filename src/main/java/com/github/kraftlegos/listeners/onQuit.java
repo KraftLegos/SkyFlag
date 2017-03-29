@@ -15,10 +15,18 @@ public class onQuit implements Listener {
     public void onPlayerDisconnect(PlayerQuitEvent e) {
         Player p = e.getPlayer();
         Game game = GameManager.getGame();
-        if (game.players.contains(p)) {
-            game.players.remove(p);
-            game.sendMessage(p.getCustomName() + ChatColor.YELLOW + " quit! (" + game.players.size() + "/" + game.getMaxPlayers() + ")");
-            return;
+        e.setQuitMessage(null);
+        if (game.getGameState() == Game.GameState.LOBBY || game.getGameState() == Game.GameState.STARTING) {
+            if (game.players.contains(p) || game != null) {
+                game.players.remove(p);
+                game.sendMessage(p.getCustomName() + ChatColor.YELLOW + " quit! (" + game.players.size() + "/" + game.getMaxPlayers() + ")");
+                return;
+            }
+        } else {
+            p.getLocation().getWorld().strikeLightningEffect(p.getLocation());
+            game.sendMessage(p.getCustomName() + ChatColor.YELLOW + " was killed when they disconnected!");
         }
+        //TODO Fix double leave messages
+        //TODO Fix bugged message
     }
 }

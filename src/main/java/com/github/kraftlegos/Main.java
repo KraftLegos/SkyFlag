@@ -1,12 +1,15 @@
 package com.github.kraftlegos;
 
+import com.github.kraftlegos.commands.ForceStart;
 import com.github.kraftlegos.commands.Join;
-import com.github.kraftlegos.listeners.onQuit;
+import com.github.kraftlegos.listeners.*;
 import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,12 +34,16 @@ public final class Main extends JavaPlugin {
         //getConfig().options().copyDefaults(true);
         //getConfig().options().copyHeader(true);
         //saveDefaultConfig();
-
         PluginManager pm = getServer().getPluginManager();
 
         pm.registerEvents(new onQuit(), this);
+        pm.registerEvents(new OnJoin(), this);
+        pm.registerEvents(new OnPlayerDamage(this), this);
+        pm.registerEvents(new OnFoodChange(), this);
+        pm.registerEvents(new OnDeath(), this);
 
         getCommand("join").setExecutor(new Join());
+        getCommand("forcestart").setExecutor(new ForceStart());
         getLogger();
 
         Game game = new Game("one");

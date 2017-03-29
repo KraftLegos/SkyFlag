@@ -1,5 +1,8 @@
 <component name="libraryTable">
   <library name="Maven: org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT">
+    <ANNOTATIONS>
+      <root url="file://$USER_HOME$/Desktop/Desktop/Desktop Servers/Test Bukkit/plugins" />
+    </ANNOTATIONS>
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/org/spigotmc/spigot-api/1.8.8-R0.1-SNAPSHOT/spigot-api-1.8.8-R0.1-20160221.082514-43.jar!/" />
     </CLASSES>
