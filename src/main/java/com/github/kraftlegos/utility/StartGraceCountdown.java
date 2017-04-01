@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Scoreboard;
 
 public class StartGraceCountdown implements Runnable{
 
@@ -14,8 +15,19 @@ public class StartGraceCountdown implements Runnable{
 
         timeUntilStart = 120;
         for (; timeUntilStart >= 0; timeUntilStart--) {
+
+            Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
+            int time = timeUntilStart + 1;
+
+            scoreboard.resetScores("PvP Enables: " + ChatColor.YELLOW + time + "s");
+            GameManager.getGame().line4 = GameManager.getGame().objective.getScore("PvP Enables: " + ChatColor.YELLOW + timeUntilStart + "s");
+            GameManager.getGame().line4.setScore(4);
+
             if (timeUntilStart == 0) {
                 //GameManager.getGame().sendMessage(ChatColor.GREEN + "DEBUG: STARTED");
+                scoreboard.resetScores("PvP Enables: " + ChatColor.YELLOW + "0s");
+                GameManager.getGame().line4 = GameManager.getGame().objective.getScore("DEATHMATCH COUNTER COMING SOONTM");
+                GameManager.getGame().line4.setScore(4);
                 GameManager.getGame().startActive();
                 break;
 

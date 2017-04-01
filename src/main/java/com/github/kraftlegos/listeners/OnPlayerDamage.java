@@ -27,7 +27,8 @@ public class OnPlayerDamage implements Listener {
     private int task;
     @EventHandler
     public void onPlayerDamage(EntityDamageByEntityEvent e) {
-            this.p = (Player) e.getDamager();
+
+            if (e.getDamager() instanceof Player) this.p = (Player) e.getDamager();
         if (GameManager.getGame().spectators.contains(p)) {
             e.setCancelled(true);
             return;

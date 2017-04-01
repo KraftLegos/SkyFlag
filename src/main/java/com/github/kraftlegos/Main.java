@@ -6,6 +6,7 @@ import com.github.kraftlegos.listeners.*;
 import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -41,6 +42,8 @@ public final class Main extends JavaPlugin {
         pm.registerEvents(new OnPlayerDamage(this), this);
         pm.registerEvents(new OnFoodChange(), this);
         pm.registerEvents(new OnDeath(), this);
+        pm.registerEvents(new OnInteractEvent(this), this);
+        pm.registerEvents(new OnHelmetChange(), this);
 
         getCommand("join").setExecutor(new Join());
         getCommand("forcestart").setExecutor(new ForceStart());
@@ -54,6 +57,7 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("line").unregister();
 
         instance = null;
 

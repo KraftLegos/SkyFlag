@@ -1,18 +1,18 @@
 package com.github.kraftlegos.object;
 
-import com.github.kraftlegos.listeners.OnJoin;
+import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.utility.StartCountdown;
 import com.github.kraftlegos.utility.StartGraceCountdown;
+import net.minecraft.server.v1_8_R3.PacketPlayOutScoreboardTeam;
+import net.minecraft.server.v1_8_R3.ScoreboardTeam;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.Team;
+import org.bukkit.scoreboard.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -32,6 +32,10 @@ public class Game {
     private GameState gameState;
     public Location redSpawn;
     public Location blueSpawn;
+    public HashMap<String, Integer> coins = new HashMap<>();
+    public HashMap<String, Integer> killAmount = new HashMap<>();
+    public HashMap<String, Integer> deathCount = new HashMap<>();
+    public HashMap<String, Scoreboard> scoreboardManager = new HashMap<>();
 
     private List<String> redTeam = new ArrayList<>();
     private List<String> blueTeam = new ArrayList<>();
@@ -50,6 +54,9 @@ public class Game {
     public Team redScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("RED");
     public Team blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
 
+    public Player redCarrier;
+    public Player blueCarrier;
+
     public Game(String gameName) {
         //FileConfiguration fileConfiguration = DataHandler.getInstance().getGameInfo();
         this.displayName = gameName;
@@ -59,12 +66,12 @@ public class Game {
         this.isTeamGame = true;
 
         double redx = 0.5;
-        double redy = 151;
-        double redz = 489.5;
+        double redy = 79;
+        double redz = 484.5;
 
         double bluex = -91.5;
-        double bluey = 151;
-        double bluez = 555.5;
+        double bluey = 79;
+        double bluez = 553.5;
 
         double lobbyx = -48.5;
         double lobbyy = 153.0;
@@ -91,10 +98,47 @@ public class Game {
 
         //DEBUG: Bukkit.getServer().broadcastMessage(players.toString());
 
+        if (board == null) {
+            this.board = Bukkit.getServer().getScoreboardManager().getNewScoreboard();
+            board.registerNewTeam("RED");
+            board.registerNewTeam("BLUE");
+            board.registerNewTeam("SPEC");
+
+            //Line 1
+            board.registerNewObjective("line", "dummy");
+            board.getObjective("line").setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "SKYFLAG");
+            board.getObjective("line").setDisplaySlot(DisplaySlot.SIDEBAR);
+
+        }
+
+        if (board.getObjective("line") == null) {
+            board.registerNewObjective("line", "dummy");
+            board.getObjective("line").setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "SKYFLAG");
+            board.getObjective("line").setDisplaySlot(DisplaySlot.SIDEBAR);
+        }
+
+        if (board.getTeam("RED") == null && board.getTeam("BLUE") == null && board.getTeam("SPEC") == null) {
+            board.registerNewTeam("RED");
+            board.registerNewTeam("BLUE");
+            board.registerNewTeam("SPEC");
+        }
+
+        board = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
+        redScoreTeam = board.getTeam("RED");
+        blueScoreTeam = board.getTeam("BLUE");
+
+        board.getObjective("line").setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "SKYFLAG");
+        board.getObjective("line").setDisplaySlot(DisplaySlot.SIDEBAR);
+
+
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            online.setScoreboard(board);
+        }
+
         Player p = gamePlayer.getPlayer();
 
         p.setHealth(20);
-        p.setSaturation(15);
+        p.setSaturation(20);
         p.setGameMode(GameMode.SURVIVAL);
         p.removePotionEffect(PotionEffectType.INVISIBILITY);
         if (isState(GameState.LOBBY) || isState(GameState.STARTING)) {
@@ -109,6 +153,10 @@ public class Game {
             }
             players.add(p);
 
+            deathCount.put(p.getName(), 0);
+            killAmount.put(p.getName(), 0);
+            coins.put(p.getName(), 0);
+
             this.objective = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("line");
 
             this.line1 = objective.getScore(" ");
@@ -118,8 +166,17 @@ public class Game {
             this.line2 = objective.getScore( ChatColor.GREEN + "Players: " + players.size() + "/" + getMaxPlayers());
             line2.setScore(6);
 
-            this.line3 = objective.getScore(" ");
+            this.line3 = objective.getScore("  ");
             line3.setScore(5);
+
+            this.line5 = objective.getScore("   ");
+            line5.setScore(3);
+
+            this.line6 = objective.getScore("Kills:" + ChatColor.GREEN + "0");
+            line6.setScore(2);
+
+            this.line7 = objective.getScore("Deaths:" + ChatColor.RED + "0");
+            line7.setScore(1);
 
             gamePlayer.teleport(lobbyPoint, gamePlayer);
             Bukkit.getServer().broadcastMessage(gamePlayer.getPlayer().getCustomName() + ChatColor.YELLOW + " joined! (" + getPlayers().size() + "/" + getMaxPlayers() + ")");
@@ -141,7 +198,6 @@ public class Game {
             gamePlayer.teleport(lobbyPoint, gamePlayer);
             p.sendMessage("You are now a spectator!");
             makeSpectator(p);
-            //TODO Make them a spec
             return false;
         } else {
             p.sendMessage("You are already in the game!");
@@ -179,6 +235,9 @@ public class Game {
 
             if(i < players.size()/2) {
                 addToTeam(TeamType.RED, p);
+
+                //TODO PacketPlayOutScoreboardTeam packetPlayOutScoreboardTeam = new PacketPlayOutScoreboardTeam();
+
                 redScoreTeam.addEntry(p.getName());
                 redScoreTeam.setPrefix("§c[R] ");
                 for (Player online : Bukkit.getOnlinePlayers()) {
@@ -189,7 +248,6 @@ public class Game {
                 p.sendMessage(ChatColor.RED + "You are now on the RED team!");
                 p.playSound(p.getLocation(), Sound.NOTE_PLING, 1.0F, 1.200F);
 
-                //TODO Start Graceperiod
             } else {
                 addToTeam(TeamType.BLUE, p);
                 blueScoreTeam.addEntry(p.getName());
@@ -201,7 +259,7 @@ public class Game {
                 p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "Please wait while we move players! You will have a 2 minute grace period when the game begins!");
                 p.sendMessage(ChatColor.BLUE + "You are now on the blue team!");
                 p.playSound(p.getLocation(), Sound.NOTE_PLING, 1.0F, 1.200F);
-                //TODO Start Graceperiod
+
             }
             i++;
         }
@@ -225,6 +283,46 @@ public class Game {
     public void startActive() {
         sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "The grace period has now ended! You can PvP!");
         setState(GameState.ACTIVE);
+    }
+
+    public void setScoreboard (Player p) {
+        String name = p.getName();
+        if (scoreboardManager.containsKey(p.getName())) {
+            scoreboardManager.remove(p.getName());
+        }
+        Scoreboard privateBoard = Bukkit.getServer().getScoreboardManager().getNewScoreboard();
+
+        setScoreboardObjective(p, "line");
+        p.setScoreboard(privateBoard);
+        scoreboardManager.put(p.getName(), privateBoard);
+    }
+
+    public Scoreboard getScoreboard (Player p) {
+        return scoreboardManager.get(p.getName());
+    }
+
+    public void setScoreboardObjective (Player p, String objectName) {
+        if (scoreboardManager.get(p.getName()).getObjective(objectName) == null) {
+            scoreboardManager.get(p.getName()).registerNewObjective(objectName, "dummy");
+            scoreboardManager.get(p.getName()).getObjective("line").setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "SKYFLAG");
+            scoreboardManager.get(p.getName()).getObjective("line").setDisplaySlot(DisplaySlot.SIDEBAR);
+        }
+    }
+
+    public void setRedCarrier (Player p) {
+        this.redCarrier = p;
+    }
+
+    public void setBlueCarrier (Player p) {
+        this.blueCarrier = p;
+    }
+
+    public Player getBlueCarrier () {
+        return this.blueCarrier;
+    }
+
+    public Player getRedCarrier () {
+        return this.redCarrier;
     }
 
     public Game getGame() {

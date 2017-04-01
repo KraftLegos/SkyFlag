@@ -24,13 +24,20 @@ public class StartCountdown implements Runnable{
                 Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
                 int time = timeUntilStart + 1;
 
-                scoreboard.resetScores(time + " until start!");
-                GameManager.getGame().line4 = GameManager.getGame().objective.getScore(timeUntilStart + " until start!");
+                scoreboard.resetScores("Waiting...");
+                scoreboard.resetScores("0 until start!");
+                scoreboard.resetScores(time + "s until start!");
+                GameManager.getGame().line4 = GameManager.getGame().objective.getScore(timeUntilStart + "s until start!");
                 GameManager.getGame().line4.setScore(4);
 
                 if (timeUntilStart == 0) {
                     //GameManager.getGame().sendMessage(ChatColor.GREEN + "DEBUG: STARTED");
                     GameManager.getGame().startGame();
+                    scoreboard.resetScores( "0s until start!");
+                    scoreboard.resetScores("0 until start!");
+                    scoreboard.resetScores(ChatColor.GREEN + "Players: " + (GameManager.getGame().players.size()) + "/" + GameManager.getGame().getMaxPlayers());
+                    GameManager.getGame().line2 = GameManager.getGame().objective.getScore( ChatColor.GREEN + "Players: " + GameManager.getGame().players.size());
+                    GameManager.getGame().line2.setScore(6);
                     break;
 
                 }
