@@ -20,7 +20,6 @@ import java.util.*;
 public class Game {
 
     private Main plugin;
-    public Game(Main instance) { plugin = instance; }
 
     private int firstRefillCountdownTimer;
     private int lastRefillCountdownTimer;
@@ -84,7 +83,8 @@ public class Game {
     public boolean redFlagDropped;
     public boolean blueFlagDropped;
 
-    public Game(String gameName) {
+    public Game(Main plugin, String gameName) {
+        this.plugin = plugin;
         //FileConfiguration fileConfiguration = DataHandler.getInstance().getGameInfo();
         this.displayName = gameName;
         this.maxPlayers = 16;
@@ -192,8 +192,8 @@ public class Game {
             this.line1 = objective.getScore(" ");
             line1.setScore(7);
 
-            board.resetScores(ChatColor.GREEN + "Players: " + (players.size()-1) + "/" + getMaxPlayers());
-            this.line2 = objective.getScore( ChatColor.GREEN + "Players: " + players.size() + "/" + getMaxPlayers());
+            board.resetScores(ChatColor.GREEN + "Players: " + (players.size() - 1) + "/" + getMaxPlayers());
+            this.line2 = objective.getScore(ChatColor.GREEN + "Players: " + players.size() + "/" + getMaxPlayers());
             line2.setScore(6);
 
             this.line3 = objective.getScore("  ");
@@ -215,7 +215,7 @@ public class Game {
                 setState(GameState.STARTING);
                 Bukkit.getServer().broadcastMessage(ChatColor.GREEN + "Minimum players reached! The game will now start in 30 seconds...");
                 for (Player pl : players) {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "title " + pl.getName() +" title {\"text\":\"30s\",\"color\":\"red\"}"); //JSON formatting is invalid!
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "title " + pl.getName() + " title {\"text\":\"30s\",\"color\":\"red\"}"); //JSON formatting is invalid!
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "title " + pl.getName() + " times 0 20 0");
                 }
                 startCount();
@@ -235,7 +235,7 @@ public class Game {
         return true;
     }
 
-    public void spawnDragon () {
+    public void spawnDragon() {
         Bukkit.getServer().getWorld("world").spawnEntity(new Location(Bukkit.getServer().getWorld("world"), -45.5, 97, 523.5), EntityType.ENDER_DRAGON);
     }
 
@@ -268,7 +268,7 @@ public class Game {
 
             //if(p.getGameMode() != GameMode.SURVIVAL) p.setGameMode(GameMode.SURVIVAL);
 
-            if(i < players.size()/2) {
+            if (i < players.size() / 2) {
                 addToTeam(TeamType.RED, p);
 
                 //TODO PacketPlayOutScoreboardTeam packetPlayOutScoreboardTeam = new PacketPlayOutScoreboardTeam();
@@ -334,7 +334,7 @@ public class Game {
 
                 firstRefillCountdownTimer--;
             }
-        },0,20L);
+        }, 0, 20L);
 
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
@@ -362,7 +362,7 @@ public class Game {
 
                 lastRefillCountdownTimer--;
             }
-        },0,20L);
+        }, 0, 20L);
 
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
@@ -390,7 +390,7 @@ public class Game {
 
                 deathmatchCountdownTimer--;
             }
-        },0,20L);
+        }, 0, 20L);
 
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
@@ -428,7 +428,7 @@ public class Game {
 
                 endCountdownTimer--;
             }
-        },0,20L);
+        }, 0, 20L);
 
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
@@ -441,7 +441,7 @@ public class Game {
     }
 
 
-    public void end () {
+    public void end() {
 
         setState(GameState.ENDING);
         if (bluePoints == redPoints) {
@@ -465,7 +465,7 @@ public class Game {
         }, 10 * 20L);
     }
 
-    public void endGame () {
+    public void endGame() {
         new Thread(new EndCounter()).start();
         setState(GameState.ENDING);
         sendMessage(ChatColor.GREEN + "TODO: END MESSAGE!");
@@ -474,7 +474,7 @@ public class Game {
 
     }
 
-    public void setScoreboard (Player p) {
+    public void setScoreboard(Player p) {
         String name = p.getName();
         if (scoreboardManager.containsKey(p.getName())) {
             scoreboardManager.remove(p.getName());
@@ -486,11 +486,11 @@ public class Game {
         scoreboardManager.put(p.getName(), privateBoard);
     }
 
-    public Scoreboard getScoreboard (Player p) {
+    public Scoreboard getScoreboard(Player p) {
         return scoreboardManager.get(p.getName());
     }
 
-    public void setScoreboardObjective (Player p, String objectName) {
+    public void setScoreboardObjective(Player p, String objectName) {
         if (scoreboardManager.get(p.getName()).getObjective(objectName) == null) {
             scoreboardManager.get(p.getName()).registerNewObjective(objectName, "dummy");
             scoreboardManager.get(p.getName()).getObjective("line").setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "SKYFLAG");
@@ -498,7 +498,7 @@ public class Game {
         }
     }
 
-    public void addNormalChestItems () {
+    public void addNormalChestItems() {
         for (Chunk c : world.getLoadedChunks()) {
             for (BlockState b : c.getTileEntities()) {
                 if (b instanceof Chest) {
@@ -614,11 +614,11 @@ public class Game {
                             Material.STICK};
 
                     Chest chest = (Chest) b;
-                    int randomNumber = (int )(Math.random() * 9 + 3);
+                    int randomNumber = (int) (Math.random() * 9 + 3);
                     for (int i = 0; i < randomNumber; i++) {
-                        int intRandom = (int)(Math.random() * 26 + 0);
+                        int intRandom = (int) (Math.random() * 26 + 0);
                         int intItems = (int) (Math.random() * randomItems.length + 0);
-                        int randomAmount = (int)(Math.random() * 8 + 1);
+                        int randomAmount = (int) (Math.random() * 8 + 1);
 
                         Material newitem = randomItems[intItems];
                         if (newitem.equals(Material.STONE_BUTTON)) {
@@ -629,7 +629,7 @@ public class Game {
                             im.setDisplayName("KReFTS HAIRY FRECKLE");
                             item.setItemMeta(im);
                             inv.setItem(intRandom, item);
-                        }else if (newitem == Material.DIAMOND_PICKAXE ||
+                        } else if (newitem == Material.DIAMOND_PICKAXE ||
                                 newitem == Material.GOLDEN_APPLE ||
                                 newitem == Material.FISHING_ROD ||
                                 newitem == Material.IRON_CHESTPLATE ||
@@ -651,13 +651,13 @@ public class Game {
         }
     }
 
-    public void kickAllPlayers () {
+    public void kickAllPlayers() {
         for (Player p : Bukkit.getServer().getOnlinePlayers()) {
             p.kickPlayer(ChatColor.RED + "GameServer restarting! If you would like to play again, join back in a few seconds!" /*TODO Say who won*/);
         }
     }
 
-    public void addBluePoints (int points) {
+    public void addBluePoints(int points) {
 
         this.bluePoints = bluePoints + points;
         int oldScore = bluePoints - points;
@@ -668,7 +668,7 @@ public class Game {
 
     }
 
-    public void addRedPoints (int points) {
+    public void addRedPoints(int points) {
 
         this.redPoints = redPoints + points;
         int oldScore = redPoints - points;
@@ -679,15 +679,15 @@ public class Game {
 
     }
 
-    public void setRedCarrier (Player p) {
+    public void setRedCarrier(Player p) {
         this.redCarrier = p == null ? null : p.getUniqueId();
     }
 
-    public void setBlueCarrier (Player p) {
+    public void setBlueCarrier(Player p) {
         this.blueCarrier = p == null ? null : p.getUniqueId();
     }
 
-    public Player getBlueCarrier () {
+    public Player getBlueCarrier() {
         return Bukkit.getPlayer(this.blueCarrier);
     }
 
@@ -700,12 +700,14 @@ public class Game {
     }
 
     public boolean isCarrier(Player p) {
-        if (this.blueCarrier.equals(p.getUniqueId()) || this.redCarrier.equals(p.getUniqueId())) { return true; } else {
+        if (this.blueCarrier.equals(p.getUniqueId()) || this.redCarrier.equals(p.getUniqueId())) {
+            return true;
+        } else {
             return false;
         }
     }
 
-    public Player getRedCarrier () {
+    public Player getRedCarrier() {
         return Bukkit.getPlayer(this.redCarrier);
     }
 
@@ -724,6 +726,7 @@ public class Game {
     public List<String> getRedTeam() {
         return redTeam;
     }
+
     public List<String> getBlueTeam() {
         return blueTeam;
     }
@@ -756,9 +759,13 @@ public class Game {
         return getGameState() == state;
     }
 
-    public boolean isRedFlagDropped() {return redFlagDropped;}
+    public boolean isRedFlagDropped() {
+        return redFlagDropped;
+    }
 
-    public boolean isBlueFlagDropped() {return blueFlagDropped;}
+    public boolean isBlueFlagDropped() {
+        return blueFlagDropped;
+    }
 
     public void sendMessage(String message) {
         for (Player player : getPlayers()) {
