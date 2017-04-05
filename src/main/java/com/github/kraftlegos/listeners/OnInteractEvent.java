@@ -5,11 +5,11 @@ import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
 import net.minecraft.server.v1_8_R3.Packet;
 import net.minecraft.server.v1_8_R3.PacketPlayOutEntityEquipment;
-import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
-import org.bukkit.Effect;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Banner;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
+import org.bukkit.plugin.Plugin;
 
 public class OnInteractEvent implements Listener {
 
@@ -31,6 +32,10 @@ public class OnInteractEvent implements Listener {
 
         if (e.getClickedBlock() == null) {
             return;
+        }
+
+        if (GameManager.getGame().spectators.contains(p)) {
+            e.setCancelled(true);
         }
 
         if ((GameManager.getGame().getGameState() != Game.GameState.LOBBY) && (GameManager.getGame().getGameState() != Game.GameState.STARTING) && (GameManager.getGame().getGameState() != Game.GameState.ENDING)) {
@@ -63,9 +68,8 @@ public class OnInteractEvent implements Listener {
                             ((CraftPlayer) pl).getHandle().playerConnection.sendPacket(entityEquipment);
                         }
                     }
-                    int stop = 0;
-                    final int finalStop = stop;
-                    stop = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+
+                    final int stop = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
                         public void run() {
                             if (GameManager.getGame().getRedCarrier() != null) {
                                 //for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
@@ -74,11 +78,16 @@ public class OnInteractEvent implements Listener {
                                 //}
                                 GameManager.getGame().getRedCarrier().getWorld().playEffect(GameManager.getGame().getRedCarrier().getEyeLocation(), Effect.STEP_SOUND, Material.LAPIS_BLOCK);
                                 //p.getWorld().spigot().playEffect(p.getEyeLocation(), Effect.TILE_BREAK, 22, 0, ((float) 2), ((float) 2), ((float) 2), 1, 10, 1);
-                            } else {
-                                Bukkit.getScheduler().cancelTask(finalStop);
                             }
                         }
                     }, 0L, 20L);
+                    Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+                        public void run() {
+                            if (GameManager.getGame().getRedCarrier() == null) {
+                                Bukkit.getScheduler().cancelTask(stop);
+                            }
+                        }
+                    }, 0L,20L);
 
                     /*while (GameManager.getGame().getRedCarrier() == p) {
                        /* PacketPlayOutWorldParticles packet = new PacketPlayOutWorldParticles(
@@ -124,13 +133,11 @@ public class OnInteractEvent implements Listener {
                     //final Packet packet = new PacketPlayOutWorldParticles(EnumParticle.REDSTONE, true, (float) p.getEyeLocation().getBlockX(), (float) p.getEyeLocation().getBlockY(), (float) p.getEyeLocation().getBlockZ(), (float) 0/255, (float) 0/255, (float) 255/255, (float) 0, 1000, null);
 
                     for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
-                        if (pl != GameManager.getGame().getRedCarrier()) {
+                        if (pl != GameManager.getGame().getBlueCarrier()) {
                             ((CraftPlayer) pl).getHandle().playerConnection.sendPacket(entityEquipment);
                         }
                     }
-                    int stop = 0;
-                    final int finalStop = stop;
-                    stop = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+                    final int stop = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
                         public void run() {
                             if (GameManager.getGame().getBlueCarrier() != null) {
                                 //for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
@@ -139,11 +146,17 @@ public class OnInteractEvent implements Listener {
                                 //}
                                 GameManager.getGame().getBlueCarrier().getWorld().playEffect(GameManager.getGame().getBlueCarrier().getEyeLocation(), Effect.STEP_SOUND, Material.REDSTONE_BLOCK);
                                 //p.getWorld().spigot().playEffect(p.getEyeLocation(), Effect.TILE_BREAK, 22, 0, ((float) 2), ((float) 2), ((float) 2), 1, 10, 1);
-                            } else {
-                                Bukkit.getScheduler().cancelTask(finalStop);
                             }
                         }
                     }, 0L, 20L);
+
+                    Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+                        public void run() {
+                            if (GameManager.getGame().getBlueCarrier() == null) {
+                                Bukkit.getScheduler().cancelTask(stop);
+                            }
+                        }
+                    }, 0L,20L);
 
                     /*while (GameManager.getGame().getBlueCarrier() == p) {
                         PacketPlayOutWorldParticles packet = new PacketPlayOutWorldParticles(
@@ -169,7 +182,101 @@ public class OnInteractEvent implements Listener {
                             e1.printStackTrace();
                         }
                     }*/
-                    //TODO if they die, drop the flag
+                } else if (GameManager.getGame().getBlueTeam().contains(p.getName()) && meta.getBaseColor() == DyeColor.BLUE) {
+                    if (GameManager.getGame().isBlueFlagDropped() == true) {
+                        Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopblue);
+                        double x = OnDeath.blueFlagDropLocation.getX();
+                        double y = OnDeath.blueFlagDropLocation.getY();
+                        double z = OnDeath.blueFlagDropLocation.getZ();
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
+                        Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
+                        Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                        airblock.setType(Material.AIR);
+                        Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
+                        bannerblock.setType(Material.STANDING_BANNER);
+                        BlockState bs = bannerblock.getState();
+                        Banner b = (Banner) bs;
+                        b.setBaseColor(DyeColor.BLUE);
+                        bs.setData(b.getData());
+                        bs.update();
+                        }else {
+                        if (GameManager.getGame().getBlueCarrier() == p) {
+                            GameManager.getGame().sendMessage("Blue team captured a flag!");
+                            ItemStack helmet = p.getInventory().getHelmet();
+
+                            PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(p.getEntityId(), 4, CraftItemStack.asNMSCopy(helmet));
+                            for (Player playerlist : Bukkit.getServer().getOnlinePlayers()) {
+                                ((CraftPlayer) playerlist).getHandle().playerConnection.sendPacket(entityEquipment);
+                            }
+                            GameManager.getGame().setBlueCarrier(null);
+
+
+                            GameManager.getGame().sendBlueMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
+                            GameManager.getGame().addBluePoints(100);
+
+
+                            Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
+                            Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                            airblock.setType(Material.AIR);
+                            Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
+                            bannerblock.setType(Material.STANDING_BANNER);
+                            BlockState bs = bannerblock.getState();
+                            Banner b = (Banner) bs;
+                            b.setBaseColor(DyeColor.BLUE);
+                            bs.setData(b.getData());
+                            bs.update();
+
+                            return;
+                        }
+                    }
+                } else if (GameManager.getGame().getRedTeam().contains(p.getName()) && meta.getBaseColor() == DyeColor.RED) {
+                    if (GameManager.getGame().isRedFlagDropped() == true) {
+                        Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopred);
+                        double x = OnDeath.redFlagDropLocation.getX();
+                        double y = OnDeath.redFlagDropLocation.getY();
+                        double z = OnDeath.redFlagDropLocation.getZ();
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
+                        Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
+                        Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                        airblock.setType(Material.AIR);
+                        Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
+                        bannerblock.setType(Material.STANDING_BANNER);
+                        BlockState bs = bannerblock.getState();
+                        Banner b = (Banner) bs;
+                        b.setBaseColor(DyeColor.RED);
+                        bs.setData(b.getData());
+                        bs.update();
+                    } else {
+                        if (GameManager.getGame().getRedCarrier() == p) {
+                            ItemStack helmet = p.getInventory().getHelmet();
+
+                            PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(p.getEntityId(), 4, CraftItemStack.asNMSCopy(helmet));
+                            for (Player playerlist : Bukkit.getServer().getOnlinePlayers()) {
+                                ((CraftPlayer) playerlist).getHandle().playerConnection.sendPacket(entityEquipment);
+                            }
+
+
+                            GameManager.getGame().sendMessage("Red team captured a flag!");
+
+                            GameManager.getGame().sendRedMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
+                            GameManager.getGame().addRedPoints(100);
+
+
+                            Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
+                            Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                            airblock.setType(Material.AIR);
+                            Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
+                            bannerblock.setType(Material.STANDING_BANNER);
+                            BlockState bs = bannerblock.getState();
+                            Banner b = (Banner) bs;
+                            b.setBaseColor(DyeColor.RED);
+                            bs.setData(b.getData());
+                            bs.update();
+
+                            GameManager.getGame().setRedCarrier(null);
+                            return;
+                        }
+                    }
                 }
             }
         }

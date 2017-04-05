@@ -9,16 +9,15 @@ import org.bukkit.scoreboard.Scoreboard;
 
 public class StartGraceCountdown implements Runnable{
 
-    private static int timeUntilStart;
-
     public void run() {
 
-        timeUntilStart = 120;
+        int timeUntilStart = 120;
         for (; timeUntilStart >= 0; timeUntilStart--) {
 
             Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
             int time = timeUntilStart + 1;
-
+            scoreboard.resetScores("PvP Enables: " + ChatColor.YELLOW + "0s");
+            GameManager.getGame().line4.setScore(4);
             scoreboard.resetScores("PvP Enables: " + ChatColor.YELLOW + time + "s");
             GameManager.getGame().line4 = GameManager.getGame().objective.getScore("PvP Enables: " + ChatColor.YELLOW + timeUntilStart + "s");
             GameManager.getGame().line4.setScore(4);
@@ -26,7 +25,6 @@ public class StartGraceCountdown implements Runnable{
             if (timeUntilStart == 0) {
                 //GameManager.getGame().sendMessage(ChatColor.GREEN + "DEBUG: STARTED");
                 scoreboard.resetScores("PvP Enables: " + ChatColor.YELLOW + "0s");
-                GameManager.getGame().line4 = GameManager.getGame().objective.getScore("DEATHMATCH COUNTER COMING SOONTM");
                 GameManager.getGame().line4.setScore(4);
                 GameManager.getGame().startActive();
                 break;

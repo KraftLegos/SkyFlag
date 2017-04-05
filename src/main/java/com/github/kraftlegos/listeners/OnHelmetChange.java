@@ -1,6 +1,7 @@
 package com.github.kraftlegos.listeners;
 
 import com.github.kraftlegos.managers.GameManager;
+import com.github.kraftlegos.object.Game;
 import net.minecraft.server.v1_8_R3.PacketPlayOutEntityEquipment;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
@@ -15,50 +16,43 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
-import org.bukkit.material.MaterialData;
 
-/**
- * Created by kgils on 4/1/2017.
- */
+import java.util.HashMap;
+import java.util.Map;
+
 public class OnHelmetChange implements Listener{
+
+    private final Map<Game.TeamType, Game.TeamType> reverses = new HashMap<Game.TeamType, Game.TeamType>() {
+        {
+            put(Game.TeamType.RED, Game.TeamType.BLUE);
+            put(Game.TeamType.BLUE, Game.TeamType.RED);
+        }
+    };
 
     @EventHandler
     public void onHelmetChange (InventoryClickEvent e) {
 
-        Player p = (Player) e.getWhoClicked();
+        Player player = (Player) e.getWhoClicked();
 
-        if (e.getSlot() == 103) {
-            if (GameManager.getGame().getBlueCarrier() == p) {
-
+        //if (e.getSlot() == 103) {
+            if(GameManager.getGame().isRedCarrier(player) == true || GameManager.getGame().isBlueCarrier(player) == true) {
+                Game.TeamType teamType = GameManager.getGame().getPlayerTeams().get(player.getUniqueId());
 
                 ItemStack itemStack = new ItemStack(Material.BANNER,1 );
                 BannerMeta bannerMeta = (BannerMeta) itemStack.getItemMeta();
-                bannerMeta.setBaseColor(DyeColor.RED);
+                bannerMeta.setBaseColor(DyeColor.valueOf(reverses.get(teamType).name()));
                 itemStack.setItemMeta(bannerMeta);
-                itemStack.setDurability((DyeColor.RED).getData());
+                itemStack.setDurability(DyeColor.valueOf(reverses.get(teamType).name()).getData());
 
-                PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(p.getEntityId(), 4, CraftItemStack.asNMSCopy(itemStack));
+                PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(player.getEntityId(), 4, CraftItemStack.asNMSCopy(itemStack));
 
-                for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
-                    if (pl != GameManager.getGame().getRedCarrier()) {
-                        ((CraftPlayer) pl).getHandle().playerConnection.sendPacket(entityEquipment);
+                for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+                    if (p != GameManager.getGame().getRedCarrier()) {
+                        ((CraftPlayer) p).getHandle().playerConnection.sendPacket(entityEquipment);
                     }
                 }
-            } else if (GameManager.getGame().getRedCarrier() == p) {
-                ItemStack itemStack = new ItemStack(Material.BANNER,1 );
-                BannerMeta bannerMeta = (BannerMeta) itemStack.getItemMeta();
-                bannerMeta.setBaseColor(DyeColor.BLUE);
-                itemStack.setItemMeta(bannerMeta);
-                itemStack.setDurability((DyeColor.BLUE).getData());
 
-                PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(p.getEntityId(), 4, CraftItemStack.asNMSCopy(itemStack));
-
-                for (Player pl : Bukkit.getServer().getOnlinePlayers()) {
-                    if (pl != GameManager.getGame().getBlueCarrier()) {
-                        ((CraftPlayer) pl).getHandle().playerConnection.sendPacket(entityEquipment);
-                    }
-                }
-            }
+            //}
         }
     }
 }

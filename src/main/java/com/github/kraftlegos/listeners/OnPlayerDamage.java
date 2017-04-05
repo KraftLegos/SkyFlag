@@ -39,6 +39,8 @@ public class OnPlayerDamage implements Listener {
                 return;
             }
 
+
+
             if (e.getEntity() instanceof Player) {
                 this.t = (Player) e.getEntity();
 
@@ -88,6 +90,10 @@ public class OnPlayerDamage implements Listener {
                     taskList.put(t.getName(), task);
                 }
 
+                if (e.getCause() == EntityDamageEvent.DamageCause.VOID) {
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill " + t.getName());
+                }
+
             }
 
 
@@ -103,6 +109,18 @@ public class OnPlayerDamage implements Listener {
     public  void onEntityDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player) {
             if (e.getCause().equals(EntityDamageEvent.DamageCause.LIGHTNING)) {
+                e.setCancelled(true);
+            }
+
+            //if (e.getCause().equals(EntityDamageEvent.DamageCause.VOID)) {
+            //    ((Player) e.getEntity()).damage(50);
+            //}
+        }
+
+        if (e.getEntity() instanceof Player) {
+            Player p = (Player) e.getEntity();
+
+            if (GameManager.getGame().spectators.contains(p)) {
                 e.setCancelled(true);
             }
         }

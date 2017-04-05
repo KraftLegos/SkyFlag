@@ -14,10 +14,9 @@ import org.bukkit.scoreboard.Scoreboard;
  */
 public class StartCountdown implements Runnable{
 
-    private static int timeUntilStart;
+    public static int timeUntilStart;
 
     public void run() {
-
             timeUntilStart = 30;
             for (; timeUntilStart >= 0; timeUntilStart--) {
 

@@ -1,5 +1,5 @@
 main: com.github.kraftlegos.Main
-version: 1.1
+version: 1.2
 author: Kraft
 name: SkyFlag
 description: Skyflag minigame plugin!
@@ -8,8 +8,13 @@ commands:
     description: Let's you join a game!
   forcestart:
     description: Force starts a game!
+  end:
+    description: Ends a game abruptly!
 
 permissions:
   skyflag.forceop:
     description: Allows you to forcestart a game
+    default: op
+  skyflag.end:
+    description: Allows you to end a game
     default: op

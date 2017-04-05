@@ -1,22 +1,27 @@
 package com.github.kraftlegos.object;
 
-import com.github.kraftlegos.managers.GameManager;
-import com.github.kraftlegos.utility.StartCountdown;
-import com.github.kraftlegos.utility.StartGraceCountdown;
-import net.minecraft.server.v1_8_R3.PacketPlayOutScoreboardTeam;
-import net.minecraft.server.v1_8_R3.ScoreboardTeam;
+import com.github.kraftlegos.Main;
+import com.github.kraftlegos.utility.*;
 import org.bukkit.*;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Chest;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
 
 @SuppressWarnings("unused")
 public class Game {
+
+    private Main plugin;
+    public Game(Main instance) { plugin = instance; }
 
     //Active Game Objects
     public ArrayList<Player> players = new ArrayList<>();
@@ -37,8 +42,19 @@ public class Game {
     public HashMap<String, Integer> deathCount = new HashMap<>();
     public HashMap<String, Scoreboard> scoreboardManager = new HashMap<>();
 
+    public int bluePoints;
+    public int redPoints;
+
+    public List<Chest> chestList;
+
     private List<String> redTeam = new ArrayList<>();
     private List<String> blueTeam = new ArrayList<>();
+
+    private HashMap<UUID, TeamType> playerTeams = new HashMap<>();
+
+    public HashMap<UUID, TeamType> getPlayerTeams() {
+        return playerTeams;
+    }
 
     private int timeUntilStart;
 
@@ -54,28 +70,31 @@ public class Game {
     public Team redScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("RED");
     public Team blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
 
-    public Player redCarrier;
-    public Player blueCarrier;
+    public UUID redCarrier;
+    public UUID blueCarrier;
+
+    public boolean redFlagDropped;
+    public boolean blueFlagDropped;
 
     public Game(String gameName) {
         //FileConfiguration fileConfiguration = DataHandler.getInstance().getGameInfo();
         this.displayName = gameName;
         this.maxPlayers = 16;
-        this.minPlayers = 2;
+        this.minPlayers = 13;
         this.world = Bukkit.getServer().getWorld("world");
         this.isTeamGame = true;
 
-        double redx = 0.5;
-        double redy = 79;
-        double redz = 484.5;
+        double redx = 567.5;
+        double redy = 83;
+        double redz = -412.5;
 
-        double bluex = -91.5;
-        double bluey = 79;
-        double bluez = 553.5;
+        double bluex = 657.5;
+        double bluey = 83;
+        double bluez = -480.5;
 
-        double lobbyx = -48.5;
-        double lobbyy = 153.0;
-        double lobbyz = 596.5;
+        double lobbyx = 609.5;
+        double lobbyy = 153;
+        double lobbyz = -372.5;
         //TODO Locations of spawnpoints in the world
 
         Location redSpawn = new Location(world, redx, redy, redz);
@@ -153,6 +172,9 @@ public class Game {
             }
             players.add(p);
 
+            this.bluePoints = 0;
+            this.redPoints = 0;
+
             deathCount.put(p.getName(), 0);
             killAmount.put(p.getName(), 0);
             coins.put(p.getName(), 0);
@@ -172,10 +194,10 @@ public class Game {
             this.line5 = objective.getScore("   ");
             line5.setScore(3);
 
-            this.line6 = objective.getScore("Kills:" + ChatColor.GREEN + "0");
+            this.line6 = objective.getScore("Red Score:" + ChatColor.RED + "0");
             line6.setScore(2);
 
-            this.line7 = objective.getScore("Deaths:" + ChatColor.RED + "0");
+            this.line7 = objective.getScore("Blue Score:" + ChatColor.BLUE + "0");
             line7.setScore(1);
 
             gamePlayer.teleport(lobbyPoint, gamePlayer);
@@ -205,6 +227,10 @@ public class Game {
         return true;
     }
 
+    public void spawnDragon () {
+        Bukkit.getServer().getWorld("world").spawnEntity(new Location(Bukkit.getServer().getWorld("world"), -45.5, 97, 523.5), EntityType.ENDER_DRAGON);
+    }
+
     public void makeSpectator(Player p) {
         p.setAllowFlight(true);
         p.setFlying(true);
@@ -228,6 +254,7 @@ public class Game {
         blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
         setState(GameState.GRACE);
         startGracePeriod();
+        addNormalChestItems();
 
         for (Player p : players) {
 
@@ -266,6 +293,7 @@ public class Game {
     }
 
     public void addToTeam(TeamType type, Player player) {
+        playerTeams.put(player.getUniqueId(), type);
         switch (type) {
             case RED:
                 redTeam.add(player.getName());
@@ -283,6 +311,57 @@ public class Game {
     public void startActive() {
         sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "The grace period has now ended! You can PvP!");
         setState(GameState.ACTIVE);
+        new Thread(new ActiveCountdown()).start();
+        //TODO 25m End
+        //TODO 20m Deathmatch
+
+
+
+
+    }
+
+    public void fiveMinRefill() {
+
+        new Thread(new FiveMinCountdown()).start();
+        //TODO 5m Chest refill (Better)
+    }
+
+    public void tenMinRefill() {
+
+        new Thread(new DeathMatchCountdown()).start();
+        //TODO 10m Chest refill
+    }
+
+    public void deathMatch() {
+        sendMessage(ChatColor.RED + "DEATHMATCH STARTED!");
+        sendMessage(ChatColor.YELLOW + "+1 " + ChatColor.BLUE + "Dragon!");
+        spawnDragon();
+        new Thread(new EndCountdown()).start();
+    }
+
+    public void end () {
+
+        if (bluePoints == redPoints) {
+            //DRAW
+            sendMessage("TODO: DRAW MESSAGE");
+        } else if (bluePoints < redPoints) {
+            //RED WON
+            sendMessage("TODO: RED WON MESSAGE");
+        } else if (bluePoints > redPoints) {
+            //BLUE WON
+            sendMessage("TODO: BLUE WON MESSAGE");
+
+        }
+        new Thread(new EndCounter()).start();
+    }
+
+    public void endGame () {
+        new Thread(new EndCounter()).start();
+        setState(GameState.ENDING);
+        sendMessage(ChatColor.GREEN + "TODO: END MESSAGE!");
+        sendMessage(ChatColor.GREEN + "THANK YOU FOR PLAYING " + ChatColor.BOLD + "" + ChatColor.ITALIC + "" + ChatColor.GOLD + "SkyFlag");
+        sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Please report any bugs to Kraft on slack!");
+
     }
 
     public void setScoreboard (Player p) {
@@ -309,20 +388,215 @@ public class Game {
         }
     }
 
+    public void addNormalChestItems () {
+        for (Chunk c : world.getLoadedChunks()) {
+            for (BlockState b : c.getTileEntities()) {
+                if (b instanceof Chest) {
+
+                    //sendMessage("FILLED: " + b.getLocation());
+                    Inventory inv = ((Chest) b).getBlockInventory();
+
+                    Material[] randomItems = {
+                            Material.STONE_BUTTON,
+
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+                            Material.STONE_PICKAXE,
+
+                            Material.DIAMOND_PICKAXE,
+                            Material.DIAMOND_PICKAXE,
+
+                            Material.APPLE,
+                            Material.APPLE,
+                            Material.APPLE,
+                            Material.APPLE,
+                            Material.APPLE,
+                            Material.APPLE,
+                            Material.APPLE,
+                            Material.APPLE,
+                            Material.APPLE,
+
+                            Material.FISHING_ROD,
+                            Material.FISHING_ROD,
+                            Material.FISHING_ROD,
+                            Material.FISHING_ROD,
+                            Material.FISHING_ROD,
+
+                            Material.GOLDEN_APPLE,
+
+                            Material.IRON_CHESTPLATE,
+                            Material.IRON_CHESTPLATE,
+                            Material.IRON_CHESTPLATE,
+
+                            Material.BOW,
+                            Material.BOW,
+                            Material.BOW,
+                            Material.BOW,
+
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+                            Material.COOKED_BEEF,
+
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+                            Material.WOOD,
+
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+                            Material.COBBLESTONE,
+
+                            Material.STRING,
+                            Material.STRING,
+                            Material.STRING,
+
+                            Material.STICK,
+                            Material.STICK,
+                            Material.STICK,
+                            Material.STICK,
+                            Material.STICK,
+                            Material.STICK};
+
+                    Chest chest = (Chest) b;
+                    int randomNumber = (int )(Math.random() * 9 + 3);
+                    for (int i = 0; i < randomNumber; i++) {
+                        int intRandom = (int)(Math.random() * 26 + 0);
+                        int intItems = (int) (Math.random() * randomItems.length + 0);
+                        int randomAmount = (int)(Math.random() * 8 + 1);
+
+                        Material newitem = randomItems[intItems];
+                        if (newitem.equals(Material.STONE_BUTTON)) {
+                            randomAmount = 1;
+
+                            ItemStack item = new ItemStack(newitem, 1);
+                            ItemMeta im = item.getItemMeta();
+                            im.setDisplayName("KReFTS HAIRY FRECKLE");
+                            item.setItemMeta(im);
+                            inv.setItem(intRandom, item);
+                        }else if (newitem == Material.DIAMOND_PICKAXE ||
+                                newitem == Material.GOLDEN_APPLE ||
+                                newitem == Material.FISHING_ROD ||
+                                newitem == Material.IRON_CHESTPLATE ||
+                                newitem == Material.STONE_PICKAXE ||
+                                newitem == Material.ENDER_PEARL ||
+                                newitem == Material.BOW) {
+                            randomAmount = 1;
+                            ItemStack item = new ItemStack(newitem, randomAmount);
+
+                            inv.setItem(intRandom, item);
+                        } else {
+                            ItemStack item = new ItemStack(newitem, randomAmount);
+
+                            inv.setItem(intRandom, item);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void kickAllPlayers () {
+        for (Player p : Bukkit.getServer().getOnlinePlayers()) {
+            p.kickPlayer(ChatColor.RED + "GameServer restarting! If you would like to play again, join back in a few seconds!" /*TODO Say who won*/);
+        }
+    }
+
+    public void addBluePoints (int points) {
+
+        this.bluePoints = bluePoints + points;
+        int oldScore = bluePoints - points;
+
+        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Blue Score:" + ChatColor.BLUE + oldScore);
+        this.line7 = objective.getScore("Blue Score:" + ChatColor.BLUE + bluePoints);
+        line7.setScore(1);
+
+    }
+
+    public void addRedPoints (int points) {
+
+        this.redPoints = redPoints + points;
+        int oldScore = redPoints - points;
+
+        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Red Score:" + ChatColor.RED + oldScore);
+        this.line6 = objective.getScore("Red Score:" + ChatColor.RED + redPoints);
+        line6.setScore(2);
+
+    }
+
     public void setRedCarrier (Player p) {
-        this.redCarrier = p;
+        this.redCarrier = p == null ? null : p.getUniqueId();
     }
 
     public void setBlueCarrier (Player p) {
-        this.blueCarrier = p;
+        this.blueCarrier = p == null ? null : p.getUniqueId();
     }
 
     public Player getBlueCarrier () {
-        return this.blueCarrier;
+        return Bukkit.getPlayer(this.blueCarrier);
+    }
+
+    public boolean isBlueCarrier(Player p) {
+        return this.blueCarrier.equals(p.getUniqueId());
+    }
+
+    public boolean isRedCarrier(Player p) {
+        return this.redCarrier.equals(p.getUniqueId());
+    }
+
+    public boolean isCarrier(Player p) {
+        if (this.blueCarrier.equals(p.getUniqueId()) || this.redCarrier.equals(p.getUniqueId())) { return true; } else {
+            return false;
+        }
     }
 
     public Player getRedCarrier () {
-        return this.redCarrier;
+        return Bukkit.getPlayer(this.redCarrier);
     }
 
     public Game getGame() {
@@ -372,9 +646,27 @@ public class Game {
         return getGameState() == state;
     }
 
+    public boolean isRedFlagDropped() {return redFlagDropped;}
+
+    public boolean isBlueFlagDropped() {return blueFlagDropped;}
+
     public void sendMessage(String message) {
         for (Player player : getPlayers()) {
             player.sendMessage(message);
+        }
+    }
+
+    public void sendBlueMessage(String message) {
+        for (String s : getBlueTeam()) {
+            Player p = Bukkit.getPlayer(s);
+            p.sendMessage(message);
+        }
+    }
+
+    public void sendRedMessage(String message) {
+        for (String s : getRedTeam()) {
+            Player p = Bukkit.getPlayer(s);
+            p.sendMessage(message);
         }
     }
 

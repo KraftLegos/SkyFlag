@@ -67,6 +67,10 @@ public class OnJoin implements Listener {
         for (Player online : Bukkit.getOnlinePlayers()) {
             online.setScoreboard(board);
         }
+
+        p.getInventory().clear();
+        p.getInventory().setArmorContents(null);
+
         GamePlayer g = new GamePlayer(p);
 
         GameManager.getGame().joinGame(g);
