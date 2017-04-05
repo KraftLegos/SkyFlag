@@ -184,21 +184,23 @@ public class OnInteractEvent implements Listener {
                     }*/
                 } else if (GameManager.getGame().getBlueTeam().contains(p.getName()) && meta.getBaseColor() == DyeColor.BLUE) {
                     if (GameManager.getGame().isBlueFlagDropped() == true) {
-                        Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopblue);
-                        double x = OnDeath.blueFlagDropLocation.getX();
-                        double y = OnDeath.blueFlagDropLocation.getY();
-                        double z = OnDeath.blueFlagDropLocation.getZ();
-                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
-                        Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
-                        Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
-                        airblock.setType(Material.AIR);
-                        Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
-                        bannerblock.setType(Material.STANDING_BANNER);
-                        BlockState bs = bannerblock.getState();
-                        Banner b = (Banner) bs;
-                        b.setBaseColor(DyeColor.BLUE);
-                        bs.setData(b.getData());
-                        bs.update();
+                        if (GameManager.getGame().getBlueCarrier() != p) {
+                            Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopblue);
+                            double x = OnDeath.blueFlagDropLocation.getX();
+                            double y = OnDeath.blueFlagDropLocation.getY();
+                            double z = OnDeath.blueFlagDropLocation.getZ();
+                            Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
+                            Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
+                            Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                            airblock.setType(Material.AIR);
+                            Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
+                            bannerblock.setType(Material.STANDING_BANNER);
+                            BlockState bs = bannerblock.getState();
+                            Banner b = (Banner) bs;
+                            b.setBaseColor(DyeColor.BLUE);
+                            bs.setData(b.getData());
+                            bs.update();
+                        }
                         }else {
                         if (GameManager.getGame().getBlueCarrier() == p) {
                             GameManager.getGame().sendMessage("Blue team captured a flag!");
