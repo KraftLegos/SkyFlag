@@ -212,7 +212,29 @@ public class OnInteractEvent implements Listener {
 
                             GameManager.getGame().sendBlueMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
                             GameManager.getGame().addBluePoints(100);
-
+/*
+                            Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
+                            Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                            airblock.setType(Material.AIR);
+                            Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
+                            bannerblock.setType(Material.STANDING_BANNER);
+                            BlockState bs = bannerblock.getState();
+                            Banner b = (Banner) bs;
+                            b.setBaseColor(DyeColor.RED);
+                            bs.setData(b.getData());
+                            bs.update();
+*/
+                            return;
+                        }
+                    }
+                } else if (GameManager.getGame().getRedTeam().contains(p.getName()) && meta.getBaseColor() == DyeColor.RED) {
+                    if (GameManager.getGame().isRedFlagDropped() == true) {
+                        if (GameManager.getGame().getRedCarrier() != p) {
+                            Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopred);
+                            double x = OnDeath.redFlagDropLocation.getX();
+                            double y = OnDeath.redFlagDropLocation.getY();
+                            double z = OnDeath.redFlagDropLocation.getZ();
+                            Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
                             Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
                             Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
                             airblock.setType(Material.AIR);
@@ -223,27 +245,7 @@ public class OnInteractEvent implements Listener {
                             b.setBaseColor(DyeColor.RED);
                             bs.setData(b.getData());
                             bs.update();
-
-                            return;
                         }
-                    }
-                } else if (GameManager.getGame().getRedTeam().contains(p.getName()) && meta.getBaseColor() == DyeColor.RED) {
-                    if (GameManager.getGame().isRedFlagDropped() == true) {
-                        Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopred);
-                        double x = OnDeath.redFlagDropLocation.getX();
-                        double y = OnDeath.redFlagDropLocation.getY();
-                        double z = OnDeath.redFlagDropLocation.getZ();
-                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
-                        Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
-                        Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
-                        airblock.setType(Material.AIR);
-                        Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
-                        bannerblock.setType(Material.STANDING_BANNER);
-                        BlockState bs = bannerblock.getState();
-                        Banner b = (Banner) bs;
-                        b.setBaseColor(DyeColor.RED);
-                        bs.setData(b.getData());
-                        bs.update();
                     } else {
                         if (GameManager.getGame().getRedCarrier() == p) {
                             ItemStack helmet = p.getInventory().getHelmet();
@@ -259,8 +261,9 @@ public class OnInteractEvent implements Listener {
                             GameManager.getGame().sendRedMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
                             GameManager.getGame().addRedPoints(100);
 
+                            /*
                             Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
-                            Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                            Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
                             airblock.setType(Material.AIR);
                             Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
                             bannerblock.setType(Material.STANDING_BANNER);
@@ -269,7 +272,7 @@ public class OnInteractEvent implements Listener {
                             b.setBaseColor(DyeColor.BLUE);
                             bs.setData(b.getData());
                             bs.update();
-
+*/
                             GameManager.getGame().setRedCarrier(null);
                             return;
                         }
