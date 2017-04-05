@@ -210,19 +210,17 @@ public class OnInteractEvent implements Listener {
                             }
                             GameManager.getGame().setBlueCarrier(null);
 
-
                             GameManager.getGame().sendBlueMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
                             GameManager.getGame().addBluePoints(100);
 
-
-                            Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
-                            Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                            Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
+                            Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
                             airblock.setType(Material.AIR);
-                            Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
+                            Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
                             bannerblock.setType(Material.STANDING_BANNER);
                             BlockState bs = bannerblock.getState();
                             Banner b = (Banner) bs;
-                            b.setBaseColor(DyeColor.BLUE);
+                            b.setBaseColor(DyeColor.RED);
                             bs.setData(b.getData());
                             bs.update();
 
@@ -261,15 +259,14 @@ public class OnInteractEvent implements Listener {
                             GameManager.getGame().sendRedMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
                             GameManager.getGame().addRedPoints(100);
 
-
-                            Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
-                            Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
+                            Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
+                            Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
                             airblock.setType(Material.AIR);
-                            Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
+                            Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
                             bannerblock.setType(Material.STANDING_BANNER);
                             BlockState bs = bannerblock.getState();
                             Banner b = (Banner) bs;
-                            b.setBaseColor(DyeColor.RED);
+                            b.setBaseColor(DyeColor.BLUE);
                             bs.setData(b.getData());
                             bs.update();
 

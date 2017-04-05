@@ -235,7 +235,7 @@ public class OnDeath implements Listener {
                             am.setCustomNameVisible(true);
                             //p.getWorld().spigot().playEffect(p.getEyeLocation(), Effect.TILE_BREAK, 22, 0, ((float) 2), ((float) 2), ((float) 2), 1, 10, 1);
                             redleft--;
-                            GameManager.getGame().redFlagDropped = false;
+                            blueFlagDropLocation.getWorld().playEffect(blueFlagDropLocation, Effect.STEP_SOUND, Material.REDSTONE_BLOCK);
                         }
                     }
                 }, 0L, 20L);

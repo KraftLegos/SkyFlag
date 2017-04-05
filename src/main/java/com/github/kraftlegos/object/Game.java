@@ -15,13 +15,21 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.*;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 @SuppressWarnings("unused")
 public class Game {
 
     private Main plugin;
     public Game(Main instance) { plugin = instance; }
+
+    private int firstRefillCountdownTimer;
+    private int lastRefillCountdownTimer;
+    private int deathmatchCountdownTimer;
+    private int endCountdownTimer;
+    private int firstRefillCountdown;
+    private int lastRifillCountdown;
+    private int deathmatchCountdown;
+    private int endCountdown;
 
     //Active Game Objects
     public ArrayList<Player> players = new ArrayList<>();
@@ -194,10 +202,10 @@ public class Game {
             this.line5 = objective.getScore("   ");
             line5.setScore(3);
 
-            this.line6 = objective.getScore("Red Score:" + ChatColor.RED + "0");
+            this.line6 = objective.getScore("Red Score:" + ChatColor.RED + " 0");
             line6.setScore(2);
 
-            this.line7 = objective.getScore("Blue Score:" + ChatColor.BLUE + "0");
+            this.line7 = objective.getScore("Blue Score:" + ChatColor.BLUE + " 0");
             line7.setScore(1);
 
             gamePlayer.teleport(lobbyPoint, gamePlayer);
@@ -311,24 +319,87 @@ public class Game {
     public void startActive() {
         sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "The grace period has now ended! You can PvP!");
         setState(GameState.ACTIVE);
-        new Thread(new ActiveCountdown()).start();
-        //TODO 25m End
-        //TODO 20m Deathmatch
+        //new Thread(new ActiveCountdown()).start();
 
+        this.firstRefillCountdownTimer = 300;
+        firstRefillCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+            public void run() {
+                int time = firstRefillCountdownTimer + 1;
 
+                board.resetScores("Chest Reset: " + ChatColor.YELLOW + "0s");
+                board.resetScores("Chest Reset: " + ChatColor.YELLOW + time + "s");
 
+                line4 = objective.getScore("Chest Reset: " + ChatColor.YELLOW + firstRefillCountdownTimer + "s");
+                line4.setScore(4);
 
+                firstRefillCountdownTimer--;
+            }
+        },0,20L);
+
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+
+            public void run() {
+                board.resetScores("Chest Reset: " + ChatColor.YELLOW + "0s");
+                fiveMinRefill();
+                Bukkit.getServer().getScheduler().cancelTask(firstRefillCountdown);
+            }
+        }, 300 * 20);
     }
 
     public void fiveMinRefill() {
 
-        new Thread(new FiveMinCountdown()).start();
-        //TODO 5m Chest refill (Better)
+        sendMessage(ChatColor.GREEN + "All chests have been refilled");
+        this.lastRefillCountdownTimer = 300;
+        lastRifillCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+            public void run() {
+                int time = lastRefillCountdownTimer + 1;
+
+                board.resetScores("Last Chest Reset: " + ChatColor.YELLOW + "0s");
+                board.resetScores("Last Chest Reset: " + ChatColor.YELLOW + time + "s");
+
+                line4 = objective.getScore("Last Chest Reset: " + ChatColor.YELLOW + lastRefillCountdownTimer + "s");
+                line4.setScore(4);
+
+                lastRefillCountdownTimer--;
+            }
+        },0,20L);
+
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+
+            public void run() {
+                board.resetScores("Last Chest Reset: " + ChatColor.YELLOW + "0s");
+                tenMinRefill();
+                Bukkit.getServer().getScheduler().cancelTask(lastRifillCountdown);
+            }
+        }, 300 * 20);
     }
 
     public void tenMinRefill() {
+        sendMessage(ChatColor.GREEN + "All chests have been refilled");
 
-        new Thread(new DeathMatchCountdown()).start();
+        this.deathmatchCountdownTimer = 300;
+        deathmatchCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+            public void run() {
+                int time = deathmatchCountdownTimer + 1;
+
+                board.resetScores("Deathmatch in: " + ChatColor.YELLOW + "0s");
+                board.resetScores("Deathmatch in: " + ChatColor.YELLOW + time + "s");
+
+                line4 = objective.getScore("Deathmatch in: " + ChatColor.YELLOW + deathmatchCountdownTimer + "s");
+                line4.setScore(4);
+
+                deathmatchCountdownTimer--;
+            }
+        },0,20L);
+
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+
+            public void run() {
+                board.resetScores("Deathmatch in: " + ChatColor.YELLOW + "0s");
+                tenMinRefill();
+                Bukkit.getServer().getScheduler().cancelTask(deathmatchCountdown);
+            }
+        }, 300 * 20);
         //TODO 10m Chest refill
     }
 
@@ -336,11 +407,43 @@ public class Game {
         sendMessage(ChatColor.RED + "DEATHMATCH STARTED!");
         sendMessage(ChatColor.YELLOW + "+1 " + ChatColor.BLUE + "Dragon!");
         spawnDragon();
-        new Thread(new EndCountdown()).start();
+
+        this.endCountdownTimer = 300;
+        endCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+            public void run() {
+
+                if (endCountdownTimer == 240 || endCountdownTimer == 180 || endCountdownTimer == 120 || endCountdownTimer == 60) {
+                    spawnDragon();
+                    sendMessage(ChatColor.RED + "DEATHMATCH STARTED!");
+                    sendMessage(ChatColor.YELLOW + "+1 " + ChatColor.BLUE + "Dragon!");
+                }
+
+                int time = endCountdownTimer + 1;
+
+                board.resetScores("Game End: " + ChatColor.YELLOW + "0s");
+                board.resetScores("Game End: " + ChatColor.YELLOW + time + "s");
+
+                line4 = objective.getScore("Game End: " + ChatColor.YELLOW + endCountdownTimer + "s");
+                line4.setScore(4);
+
+                endCountdownTimer--;
+            }
+        },0,20L);
+
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+
+            public void run() {
+                board.resetScores("Game End: " + ChatColor.YELLOW + "0s");
+                tenMinRefill();
+                Bukkit.getServer().getScheduler().cancelTask(endCountdown);
+            }
+        }, 300 * 20);
     }
+
 
     public void end () {
 
+        setState(GameState.ENDING);
         if (bluePoints == redPoints) {
             //DRAW
             sendMessage("TODO: DRAW MESSAGE");
@@ -352,7 +455,14 @@ public class Game {
             sendMessage("TODO: BLUE WON MESSAGE");
 
         }
-        new Thread(new EndCounter()).start();
+
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+            public void run() {
+
+                kickAllPlayers();
+                Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "restart");
+            }
+        }, 10 * 20L);
     }
 
     public void endGame () {
@@ -552,8 +662,8 @@ public class Game {
         this.bluePoints = bluePoints + points;
         int oldScore = bluePoints - points;
 
-        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Blue Score:" + ChatColor.BLUE + oldScore);
-        this.line7 = objective.getScore("Blue Score:" + ChatColor.BLUE + bluePoints);
+        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Blue Score: " + ChatColor.BLUE + oldScore);
+        this.line7 = objective.getScore("Blue Score: " + ChatColor.BLUE + bluePoints);
         line7.setScore(1);
 
     }
@@ -563,8 +673,8 @@ public class Game {
         this.redPoints = redPoints + points;
         int oldScore = redPoints - points;
 
-        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Red Score:" + ChatColor.RED + oldScore);
-        this.line6 = objective.getScore("Red Score:" + ChatColor.RED + redPoints);
+        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Red Score: " + ChatColor.RED + oldScore);
+        this.line6 = objective.getScore("Red Score: " + ChatColor.RED + redPoints);
         line6.setScore(2);
 
     }

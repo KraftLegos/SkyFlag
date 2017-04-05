@@ -42,7 +42,7 @@ public final class Main extends JavaPlugin {
         pm.registerEvents(new OnFoodChange(), this);
         pm.registerEvents(new OnDeath(this), this);
         pm.registerEvents(new OnInteractEvent(this), this);
-        pm.registerEvents(new OnHelmetChange(), this);
+        //pm.registerEvents(new OnHelmetChange(), this);
         pm.registerEvents(new OnMove(), this);
         pm.registerEvents(new OnItemPickup(), this);
 
