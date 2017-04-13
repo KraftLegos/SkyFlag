@@ -1,5 +1,5 @@
 main: com.github.kraftlegos.Main
-version: 1.2
+version: 1.3
 author: Kraft
 name: SkyFlag
 description: Skyflag minigame plugin!
@@ -10,6 +10,10 @@ commands:
     description: Force starts a game!
   end:
     description: Ends a game abruptly!
+  shout:
+    description: Let's you send a message to all teams!
+  forceadd:
+    description: Forcibly adds a player to your game!
 
 permissions:
   skyflag.forceop:
@@ -17,4 +21,7 @@ permissions:
     default: op
   skyflag.end:
     description: Allows you to end a game
+    default: op
+  skyflag.forceadd:
+    description: Allows you to use /forceadd
     default: op

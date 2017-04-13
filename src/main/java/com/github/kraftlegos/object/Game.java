@@ -1,26 +1,35 @@
 package com.github.kraftlegos.object;
 
 import com.github.kraftlegos.Main;
-import com.github.kraftlegos.utility.*;
+import com.github.kraftlegos.utility.EndCounter;
+import com.github.kraftlegos.utility.StartCountdown;
+import com.github.kraftlegos.utility.StartGraceCountdown;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
-import org.bukkit.entity.EntityType;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.Potion;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.scoreboard.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 @SuppressWarnings("unused")
 public class Game {
 
     private Main plugin;
 
+    //**************Countdown Timers*****************
     private int firstRefillCountdownTimer;
     private int lastRefillCountdownTimer;
     private int deathmatchCountdownTimer;
@@ -30,58 +39,69 @@ public class Game {
     private int deathmatchCountdown;
     private int endCountdown;
 
-    //Active Game Objects
+    //***********Pre-Defined Game Objects***********
+
+    private String displayName;
+
+    private boolean isTeamGame;
+
+    private int maxPlayers;
+    private int minPlayers;
+
+    private World world;
+
+    public Location lobbyPoint;
+
+    public Location redSpawn;
+    public Location blueSpawn;
+
+    //*************Active Game Objects**************
+
+    //Lists
     public ArrayList<Player> players = new ArrayList<>();
     public ArrayList<Player> spectators = new ArrayList<>();
     private ArrayList<GameTeam> team = new ArrayList<>();
-    private String displayName;
-    private int maxPlayers;
-    private int minPlayers;
-    private World world;
-    //private ArrayList<Location> spawnPoints = new ArrayList<>();
-    private boolean isTeamGame;
-    public Location lobbyPoint;
-    private GameState gameState;
-    public Location redSpawn;
-    public Location blueSpawn;
-    public HashMap<String, Integer> coins = new HashMap<>();
-    public HashMap<String, Integer> killAmount = new HashMap<>();
-    public HashMap<String, Integer> deathCount = new HashMap<>();
-    public HashMap<String, Scoreboard> scoreboardManager = new HashMap<>();
-
-    public int bluePoints;
-    public int redPoints;
-
-    public List<Chest> chestList;
-
+    private ArrayList<BlockState> chestList = new ArrayList<>();
+    private HashMap<UUID, TeamType> playerTeams = new HashMap<>();
     private List<String> redTeam = new ArrayList<>();
     private List<String> blueTeam = new ArrayList<>();
 
-    private HashMap<UUID, TeamType> playerTeams = new HashMap<>();
+    //HashMaps
+    //private HashMap<String, Integer> coins = new HashMap<>();
+    //private HashMap<String, Integer> killAmount = new HashMap<>();
+    //private HashMap<String, Integer> deathCount = new HashMap<>();
+    private HashMap<String, Scoreboard> scoreboardManager = new HashMap<>();
 
-    public HashMap<UUID, TeamType> getPlayerTeams() {
-        return playerTeams;
-    }
-
+    //Ints
+    private int bluePoints;
+    private int redPoints;
     private int timeUntilStart;
 
-    public Scoreboard board = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
-    public Objective objective;
-    public Score line1;
-    public Score line2;
-    public Score line3;
-    public Score line4;
-    public Score line5;
-    public Score line6;
-    public Score line7;
-    public Team redScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("RED");
-    public Team blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
-
-    public UUID redCarrier;
-    public UUID blueCarrier;
-
+    //Booleans
     public boolean redFlagDropped;
     public boolean blueFlagDropped;
+
+    //UUIDs
+    private UUID redCarrier;
+    private UUID blueCarrier;
+
+    //Others
+    private GameState gameState;
+
+    public Scoreboard board = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
+
+    public Objective objective;
+
+    private Score line1;
+    public Score line2;
+    private Score line3;
+    public Score line4;
+    private Score line5;
+    private Score line6;
+    private Score line7;
+
+    public Team redScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("RED");
+    public Team blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
 
     public Game(Main plugin, String gameName) {
         this.plugin = plugin;
@@ -106,14 +126,26 @@ public class Game {
         //TODO Locations of spawnpoints in the world
 
         Location redSpawn = new Location(world, redx, redy, redz);
+
+        redSpawn.setPitch((float)0.0);
+        redSpawn.setYaw((float)180.0);
+
         Location blueSpawn = new Location(world, bluex, bluey, bluez);
+
+        blueSpawn.setPitch((float) 0.0);
+        blueSpawn.setYaw((float) 0.0);
+
         Location lobbySpawn = new Location(world, lobbyx, lobbyy, lobbyz);
+
+        lobbySpawn.setPitch((float) 0.0);
+        lobbySpawn.setYaw((float) 180.0);
+
         this.redSpawn = redSpawn;
         this.blueSpawn = blueSpawn;
         this.lobbyPoint = lobbySpawn;
     }
 
-    public boolean joinGame(GamePlayer gamePlayer) {
+    public void joinGame(GamePlayer gamePlayer) {
         //if (gamePlayer.isTeamClass() && !isTeamGame) {
         //    gamePlayer.sendMessage("TEST");
         //    return false;
@@ -171,21 +203,21 @@ public class Game {
         if (isState(GameState.LOBBY) || isState(GameState.STARTING)) {
             if (players.contains(p)) {
                 p.sendMessage(ChatColor.RED + "You are already in the game!");
-                return false;
+                return;
             }
 
             if (getPlayers().size() == getMaxPlayers()) {
                 p.sendMessage("&cThis game has already started! Please try again in a few minutes!");
-                return false;
+                return;
             }
             players.add(p);
 
             this.bluePoints = 0;
             this.redPoints = 0;
 
-            deathCount.put(p.getName(), 0);
-            killAmount.put(p.getName(), 0);
-            coins.put(p.getName(), 0);
+            //deathCount.put(p.getName(), 0);
+            //killAmount.put(p.getName(), 0);
+            //coins.put(p.getName(), 0);
 
             this.objective = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("line");
 
@@ -202,10 +234,10 @@ public class Game {
             this.line5 = objective.getScore("   ");
             line5.setScore(3);
 
-            this.line6 = objective.getScore("Red Score:" + ChatColor.RED + " 0");
+            this.line6 = objective.getScore("Red Score: " + ChatColor.RED + redPoints);
             line6.setScore(2);
 
-            this.line7 = objective.getScore("Blue Score:" + ChatColor.BLUE + " 0");
+            this.line7 = objective.getScore("Blue Score: " + ChatColor.BLUE + bluePoints);
             line7.setScore(1);
 
             gamePlayer.teleport(lobbyPoint, gamePlayer);
@@ -220,7 +252,6 @@ public class Game {
                 }
                 startCount();
             } else {
-                board.resetScores("Waiting...");
                 this.line4 = objective.getScore("Waiting...");
                 line4.setScore(4);
             }
@@ -228,18 +259,58 @@ public class Game {
             gamePlayer.teleport(lobbyPoint, gamePlayer);
             p.sendMessage("You are now a spectator!");
             makeSpectator(p);
-            return false;
+            return;
         } else {
             p.sendMessage("You are already in the game!");
         }
-        return true;
+        return;
     }
 
     public void spawnDragon() {
-        Bukkit.getServer().getWorld("world").spawnEntity(new Location(Bukkit.getServer().getWorld("world"), -45.5, 97, 523.5), EntityType.ENDER_DRAGON);
+        Bukkit.getServer().getWorld("world").spawn(new Location(Bukkit.getServer().getWorld("world"), 614.5, 116, -446.5), EnderDragon.class);
     }
 
-    public void makeSpectator(Player p) {
+    public void removeSpectator (Player p, TeamType teamType) {
+        p.setFlying(false);
+        p.setAllowFlight(false);
+        spectators.remove(p);
+        p.removePotionEffect(PotionEffectType.INVISIBILITY);
+
+        spectators.remove(p);
+        players.add(p);
+
+        if (teamType == TeamType.BLUE) {
+            blueTeam.add(p.getName());
+            p.teleport(blueSpawn);
+        } else if (teamType == TeamType.RED) {
+            redTeam.add(p.getName());
+            p.teleport(redSpawn);
+        }
+
+        ItemStack stoneSword = new ItemStack(Material.STONE_SWORD,1 );
+        stoneSword.addEnchantment(Enchantment.DAMAGE_ALL, 1);
+        p.getInventory().addItem(stoneSword);
+
+        ItemStack woodenPickaxe = new ItemStack(Material.WOOD_PICKAXE, 1);
+        p.getInventory().addItem(woodenPickaxe);
+
+        ItemStack blocks = new ItemStack(Material.WOOD, 8);
+        p.getInventory().addItem(blocks);
+
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 10, 1));
+
+        p.getInventory().setHelmet(new ItemStack(Material.LEATHER_HELMET));
+        p.getInventory().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE, 1));
+        p.getInventory().setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
+        p.getInventory().setBoots(new ItemStack(Material.LEATHER_BOOTS));
+
+        for (Player pl : players) {
+            pl.showPlayer(p);
+        }
+
+    }
+
+    private void makeSpectator(Player p) {
         p.setAllowFlight(true);
         p.setFlying(true);
         spectators.add(p);
@@ -249,14 +320,40 @@ public class Game {
         }
     }
 
-    public void startCount() {
+    private void startCount() {
+
         new Thread(new StartCountdown()).start();
     }
 
     public void startGame() {
 
+        for (Player player : players) {
+            ItemStack stoneSword = new ItemStack(Material.STONE_SWORD,1 );
+            stoneSword.addEnchantment(Enchantment.DAMAGE_ALL, 1);
+            player.getInventory().addItem(stoneSword);
+
+            ItemStack woodenPickaxe = new ItemStack(Material.WOOD_PICKAXE, 1);
+            player.getInventory().addItem(woodenPickaxe);
+
+            ItemStack blocks = new ItemStack(Material.WOOD, 8);
+            player.getInventory().addItem(blocks);
+
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 10, 1));
+
+            player.getInventory().setHelmet(new ItemStack(Material.LEATHER_HELMET));
+            player.getInventory().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE, 1));
+            player.getInventory().setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
+            player.getInventory().setBoots(new ItemStack(Material.LEATHER_BOOTS));
+        }
+
         int i = 0;
         Scoreboard b = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
+
+        this.line2 = objective.getScore(ChatColor.GREEN + "Players: " + players.size());
+        line2.setScore(6);
+
+        board.resetScores(ChatColor.GREEN + "Players: " + players.size() + "/" + getMaxPlayers());
+        board.resetScores("Waiting...");
 
         redScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("RED");
         blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
@@ -300,7 +397,7 @@ public class Game {
         }
     }
 
-    public void addToTeam(TeamType type, Player player) {
+    private void addToTeam(TeamType type, Player player) {
         playerTeams.put(player.getUniqueId(), type);
         switch (type) {
             case RED:
@@ -312,7 +409,8 @@ public class Game {
         }
     }
 
-    public void startGracePeriod() {
+    private void startGracePeriod() {
+        board.resetScores("Waiting...");
         new Thread(new StartGraceCountdown()).start();
     }
 
@@ -322,6 +420,7 @@ public class Game {
         //new Thread(new ActiveCountdown()).start();
 
         this.firstRefillCountdownTimer = 300;
+        board.resetScores("PvP Enables: " + ChatColor.YELLOW + "0s");
         firstRefillCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
             public void run() {
                 int time = firstRefillCountdownTimer + 1;
@@ -339,6 +438,7 @@ public class Game {
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
             public void run() {
+                board.resetScores("Chest Reset: " + ChatColor.YELLOW + "1s");
                 board.resetScores("Chest Reset: " + ChatColor.YELLOW + "0s");
                 fiveMinRefill();
                 Bukkit.getServer().getScheduler().cancelTask(firstRefillCountdown);
@@ -349,6 +449,7 @@ public class Game {
     public void fiveMinRefill() {
 
         sendMessage(ChatColor.GREEN + "All chests have been refilled");
+        addFirstRefillItems();
         this.lastRefillCountdownTimer = 300;
         lastRifillCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
             public void run() {
@@ -376,6 +477,7 @@ public class Game {
 
     public void tenMinRefill() {
         sendMessage(ChatColor.GREEN + "All chests have been refilled");
+        addLastRefillItems();
 
         this.deathmatchCountdownTimer = 300;
         deathmatchCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
@@ -396,7 +498,7 @@ public class Game {
 
             public void run() {
                 board.resetScores("Deathmatch in: " + ChatColor.YELLOW + "0s");
-                tenMinRefill();
+                deathMatch();
                 Bukkit.getServer().getScheduler().cancelTask(deathmatchCountdown);
             }
         }, 300 * 20);
@@ -412,9 +514,8 @@ public class Game {
         endCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
             public void run() {
 
-                if (endCountdownTimer == 240 || endCountdownTimer == 180 || endCountdownTimer == 120 || endCountdownTimer == 60) {
+                if (endCountdownTimer == 150) {
                     spawnDragon();
-                    sendMessage(ChatColor.RED + "DEATHMATCH STARTED!");
                     sendMessage(ChatColor.YELLOW + "+1 " + ChatColor.BLUE + "Dragon!");
                 }
 
@@ -434,12 +535,11 @@ public class Game {
 
             public void run() {
                 board.resetScores("Game End: " + ChatColor.YELLOW + "0s");
-                tenMinRefill();
+                end();
                 Bukkit.getServer().getScheduler().cancelTask(endCountdown);
             }
         }, 300 * 20);
     }
-
 
     public void end() {
 
@@ -490,7 +590,7 @@ public class Game {
         return scoreboardManager.get(p.getName());
     }
 
-    public void setScoreboardObjective(Player p, String objectName) {
+    private void setScoreboardObjective(Player p, String objectName) {
         if (scoreboardManager.get(p.getName()).getObjective(objectName) == null) {
             scoreboardManager.get(p.getName()).registerNewObjective(objectName, "dummy");
             scoreboardManager.get(p.getName()).getObjective("line").setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "SKYFLAG");
@@ -498,10 +598,419 @@ public class Game {
         }
     }
 
-    public void addNormalChestItems() {
+    public HashMap<UUID, TeamType> getPlayerTeams() {
+        return playerTeams;
+    }
+
+    private void addLastRefillItems() {
+        for (BlockState b : chestList) {
+            if (b != null) {
+                Inventory inv = ((Chest) b).getBlockInventory();
+
+                Material[] randomItems = {
+                        Material.STONE_BUTTON,
+
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+                        Material.DIAMOND_CHESTPLATE,
+
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+                        Material.DIAMOND_HELMET,
+
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+                        Material.DIAMOND_LEGGINGS,
+
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+                        Material.DIAMOND_BOOTS,
+
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+
+                        Material.POTION,
+                        Material.POTION,
+                        Material.POTION,
+                        Material.POTION,
+                        Material.POTION,
+                        Material.POTION,
+                        Material.POTION,
+                        Material.POTION,
+                        Material.POTION,
+
+                        Material.STONE_HOE,
+
+
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+
+                        Material.ENDER_PEARL,
+                        Material.ENDER_PEARL,
+                        Material.ENDER_PEARL,
+                        Material.ENDER_PEARL,
+
+
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+
+
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                };
+
+                Chest chest = (Chest) b;
+                int randomNumber = (int) (Math.random() * 15 + 8);
+                for (int i = 0; i < randomNumber; i++) {
+                    int intRandom = (int) (Math.random() * 26 + 0);
+                    int intItems = (int) (Math.random() * randomItems.length + 0);
+                    int randomAmount = (int) (Math.random() * 13 + 5);
+
+                    Material newitem = randomItems[intItems];
+                    if (newitem.equals(Material.STONE_BUTTON)) {
+                        randomAmount = 1;
+
+                        ItemStack item = new ItemStack(newitem, 1);
+                        ItemMeta im = item.getItemMeta();
+                        im.setDisplayName("KReFTS HAIRY FRECKLE");
+                        item.setItemMeta(im);
+                        inv.setItem(intRandom, item);
+                    } else if (newitem == Material.STONE_HOE ) {
+                        ItemStack item = new ItemStack(newitem, 1);
+                        ItemMeta im = item.getItemMeta();
+                        im.setDisplayName("Don't keep em, just chuck em");
+                        im.addEnchant(Enchantment.KNOCKBACK, 4, true);
+                        item.setItemMeta(im);
+                        inv.setItem(intRandom, item);
+                    } else if (newitem == Material.POTION) {
+                        Potion potion = new Potion(PotionType.SPEED,2);
+                        potion.setSplash(true);
+                        ItemStack iStack = new ItemStack(Material.POTION);
+                        potion.apply(iStack);
+                        inv.setItem(intRandom, iStack);
+                    } else if (newitem == Material.DIAMOND_SWORD) {
+                        ItemStack iStack = new ItemStack(Material.DIAMOND_SWORD);
+                        iStack.addEnchantment(Enchantment.DAMAGE_ALL, 1);
+                        inv.setItem(intRandom, iStack);
+                    } else if (newitem == Material.DIAMOND_PICKAXE ||
+                            newitem == Material.DIAMOND_BOOTS ||
+                            newitem == Material.DIAMOND_HELMET ||
+                            newitem == Material.DIAMOND_CHESTPLATE ||
+                            newitem == Material.DIAMOND_LEGGINGS ||
+                            newitem == Material.ENDER_PEARL ||
+                            newitem == Material.DIAMOND_BLOCK ||
+                            newitem == Material.TNT) {
+                        randomAmount = 1;
+                        ItemStack item = new ItemStack(newitem, randomAmount);
+
+                        inv.setItem(intRandom, item);
+                    } else {
+                        ItemStack item = new ItemStack(newitem, randomAmount);
+
+                        inv.setItem(intRandom, item);
+                    }
+                }
+            }
+        }
+    }
+
+    private void addFirstRefillItems() {
+        for (BlockState b : chestList) {
+            if (b != null) {
+                Inventory inv = ((Chest) b).getBlockInventory();
+
+                Material[] randomItems = {
+                        Material.STONE_BUTTON,
+
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+                        Material.TNT,
+
+                        Material.IRON_CHESTPLATE,
+                        Material.IRON_CHESTPLATE,
+                        Material.IRON_CHESTPLATE,
+                        Material.IRON_CHESTPLATE,
+                        Material.IRON_CHESTPLATE,
+                        Material.IRON_CHESTPLATE,
+                        Material.IRON_CHESTPLATE,
+                        Material.IRON_CHESTPLATE,
+
+                        Material.IRON_HELMET,
+                        Material.IRON_HELMET,
+                        Material.IRON_HELMET,
+                        Material.IRON_HELMET,
+                        Material.IRON_HELMET,
+                        Material.IRON_HELMET,
+                        Material.IRON_HELMET,
+                        Material.IRON_HELMET,
+
+                        Material.IRON_LEGGINGS,
+                        Material.IRON_LEGGINGS,
+                        Material.IRON_LEGGINGS,
+                        Material.IRON_LEGGINGS,
+                        Material.IRON_LEGGINGS,
+                        Material.IRON_LEGGINGS,
+                        Material.IRON_LEGGINGS,
+
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+                        Material.IRON_BOOTS,
+
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+                        Material.GOLDEN_APPLE,
+
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+                        Material.DIAMOND_PICKAXE,
+
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+                        Material.DIAMOND_SWORD,
+
+                        Material.STONE_HOE,
+                        Material.STONE_HOE,
+
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+                        Material.DIAMOND_BLOCK,
+
+                        Material.ENDER_PEARL,
+
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+                        Material.WOOD,
+
+
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                        Material.EXP_BOTTLE,
+                };
+
+                Chest chest = (Chest) b;
+                int randomNumber = (int) (Math.random() * 11 + 5);
+                for (int i = 0; i < randomNumber; i++) {
+                    int intRandom = (int) (Math.random() * 26 + 0);
+                    int intItems = (int) (Math.random() * randomItems.length + 0);
+                    int randomAmount = (int) (Math.random() * 12 + 1);
+
+                    Material newitem = randomItems[intItems];
+                    if (newitem.equals(Material.STONE_BUTTON)) {
+                        randomAmount = 1;
+
+                        ItemStack item = new ItemStack(newitem, 1);
+                        ItemMeta im = item.getItemMeta();
+                        im.setDisplayName("KReFTS HAIRY FRECKLE");
+                        item.setItemMeta(im);
+                        inv.setItem(intRandom, item);
+                    } else if (newitem == Material.STONE_HOE ) {
+                        ItemStack item = new ItemStack(newitem, 1);
+                        ItemMeta im = item.getItemMeta();
+                        im.setDisplayName("Don't keep em, just chuck em");
+                        im.addEnchant(Enchantment.KNOCKBACK, 2, true);
+                        item.setItemMeta(im);
+                        inv.setItem(intRandom, item);
+                    } else if (newitem == Material.DIAMOND_PICKAXE ||
+                            newitem == Material.IRON_BOOTS ||
+                            newitem == Material.IRON_HELMET ||
+                            newitem == Material.IRON_CHESTPLATE ||
+                            newitem == Material.IRON_LEGGINGS ||
+                            newitem == Material.ENDER_PEARL ||
+                            newitem == Material.DIAMOND_BLOCK ||
+                            newitem == Material.DIAMOND_SWORD ||
+                            newitem == Material.TNT) {
+                        randomAmount = 1;
+                        ItemStack item = new ItemStack(newitem, randomAmount);
+
+                        inv.setItem(intRandom, item);
+                    } else {
+                        ItemStack item = new ItemStack(newitem, randomAmount);
+
+                        inv.setItem(intRandom, item);
+                    }
+                }
+            } else {
+                chestList.remove(b);
+            }
+        }
+    }
+
+    private void addNormalChestItems() {
         for (Chunk c : world.getLoadedChunks()) {
             for (BlockState b : c.getTileEntities()) {
                 if (b instanceof Chest) {
+
+                    chestList.add(b);
 
                     //sendMessage("FILLED: " + b.getLocation());
                     Inventory inv = ((Chest) b).getBlockInventory();
@@ -606,6 +1115,21 @@ public class Game {
                             Material.STRING,
                             Material.STRING,
 
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+                            Material.ARROW,
+
                             Material.STICK,
                             Material.STICK,
                             Material.STICK,
@@ -651,7 +1175,7 @@ public class Game {
         }
     }
 
-    public void kickAllPlayers() {
+    private void kickAllPlayers() {
         for (Player p : Bukkit.getServer().getOnlinePlayers()) {
             p.kickPlayer(ChatColor.RED + "GameServer restarting! If you would like to play again, join back in a few seconds!" /*TODO Say who won*/);
         }
@@ -662,6 +1186,7 @@ public class Game {
         this.bluePoints = bluePoints + points;
         int oldScore = bluePoints - points;
 
+        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Blue Score: " + ChatColor.BLUE + "0");
         Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Blue Score: " + ChatColor.BLUE + oldScore);
         this.line7 = objective.getScore("Blue Score: " + ChatColor.BLUE + bluePoints);
         line7.setScore(1);
@@ -673,6 +1198,7 @@ public class Game {
         this.redPoints = redPoints + points;
         int oldScore = redPoints - points;
 
+        Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Red Score: " + ChatColor.BLUE + "0");
         Bukkit.getServer().getScoreboardManager().getMainScoreboard().resetScores("Red Score: " + ChatColor.RED + oldScore);
         this.line6 = objective.getScore("Red Score: " + ChatColor.RED + redPoints);
         line6.setScore(2);

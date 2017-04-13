@@ -11,6 +11,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -20,8 +21,12 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.github.kraftlegos.listeners.OnPlayerDamage.lastDamager;
@@ -35,7 +40,10 @@ public class OnDeath implements Listener {
         }
     };
 
+    public static ArrayList<String> spawnProt = new ArrayList<>();
+
     private HashMap<String, Integer> taskList = new HashMap<>();
+    private ArrayList<Integer> respawnTaskList = new ArrayList<>();
     private Player t;
     private Player p;
     private int redtask;
@@ -49,6 +57,9 @@ public class OnDeath implements Listener {
     public static Location redFlagDropLocation;
     public static Location blueFlagDropLocation;
 
+    public static float redFlagDropYaw;
+    public static float blueFlagDropYaw;
+
     private Main plugin;
     public OnDeath(Main instance) { plugin = instance; }
 
@@ -56,6 +67,20 @@ public class OnDeath implements Listener {
     public void onPlayerDeath(PlayerDeathEvent e) {
 
         this.t = e.getEntity();
+
+        for (ItemStack i : e.getDrops()) {
+            if (i.getType().equals(Material.STONE_SWORD) || i.getType().equals(Material.LEATHER_HELMET) || i.getType().equals(Material.LEATHER_CHESTPLATE) || i.getType().equals(Material.LEATHER_LEGGINGS) || i.getType().equals(Material.LEATHER_BOOTS) || i.getType().equals(Material.WOOD_PICKAXE)) {
+                i.setType(Material.AIR);
+            }
+        }
+
+        t.getInventory().remove(Material.LEATHER_BOOTS);
+        t.getInventory().remove(Material.LEATHER_CHESTPLATE);
+        t.getInventory().remove(Material.LEATHER_HELMET);
+        t.getInventory().remove(Material.LEATHER_LEGGINGS);
+        t.getInventory().remove(Material.STONE_SWORD);
+        t.getInventory().remove(Material.WOOD_PICKAXE);
+        t.updateInventory();
 
         if (GameManager.getGame().getRedCarrier() != null) {
             Game.TeamType teamType = GameManager.getGame().getPlayerTeams().get(t.getUniqueId());
@@ -114,17 +139,23 @@ public class OnDeath implements Listener {
 
         if (GameManager.getGame().getRedCarrier() == t) {
             GameManager.getGame().setRedCarrier(null);
-            GameManager.getGame().blueFlagDropped = true;
             if (!e.getDeathMessage().contains("fell out of the world")) {
+                GameManager.getGame().blueFlagDropped = true;
+                for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                    s.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "Blue flag was dropped by " + t.getCustomName());
+                }
                 Block bann = t.getLocation().getBlock().getRelative(BlockFace.SELF);
                 bann.setType(Material.STANDING_BANNER);
                 BlockState bs = bann.getState();
                 Banner banner = (Banner) bs;
+                org.bukkit.material.Banner bannerData = (org.bukkit.material.Banner) banner.getData();
+                bannerData.setFacingDirection(yawToFace(blueFlagDropYaw, false));
                 banner.setBaseColor(DyeColor.BLUE);
                 bs.setData(banner.getData());
                 bs.update();
 
                 this.blueFlagDropLocation = t.getLocation();
+                this.blueFlagDropYaw = t.getLocation().getYaw();
 
 
                 //new Thread(new ReturnBlueFlag()).start();
@@ -146,7 +177,7 @@ public class OnDeath implements Listener {
                             am.setArms(false);
                             am.setGravity(false);
                             am.setVisible(false);
-                            am.setCustomName(ChatColor.RED + "Returning in" + blueleft + "s!");
+                            am.setCustomName(ChatColor.RED + "Returning in: " + blueleft + "s!");
                             am.setCustomNameVisible(true);
                             //p.getWorld().spigot().playEffect(p.getEyeLocation(), Effect.TILE_BREAK, 22, 0, ((float) 2), ((float) 2), ((float) 2), 1, 10, 1);
                             blueleft--;
@@ -168,7 +199,8 @@ public class OnDeath implements Listener {
                                 double z = OnDeath.blueFlagDropLocation.getZ();
                                 Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
 
-                                Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
+                                Location defaultBlueFlag = new Location(t.getWorld(), 698.5, 76, -390.5);
+                                defaultBlueFlag.setYaw((float)135.5);
 
                                 Block airblock = blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
                                 airblock.setType(Material.AIR);
@@ -177,6 +209,8 @@ public class OnDeath implements Listener {
                                 bannerblock.setType(Material.STANDING_BANNER);
                                 BlockState bs = bannerblock.getState();
                                 Banner banner = (Banner) bs;
+                                org.bukkit.material.Banner bannerData = (org.bukkit.material.Banner) banner.getData();
+                                bannerData.setFacingDirection(yawToFace(defaultBlueFlag.getYaw(), false));
                                 banner.setBaseColor(DyeColor.BLUE);
                                 bs.setData(banner.getData());
                                 bs.update();
@@ -190,7 +224,10 @@ public class OnDeath implements Listener {
                 taskList.put("blueflag", bluetask);
             } else {
 
-                Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
+                for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                    s.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "Blue flag was returned to it's base");
+                }
+                Location defaultBlueFlag = new Location(t.getWorld(), 698.5, 76, -390.5);
 
                 Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
                 bannerblock.setType(Material.STANDING_BANNER);
@@ -204,17 +241,23 @@ public class OnDeath implements Listener {
 
         if (GameManager.getGame().getBlueCarrier() == t) {
             GameManager.getGame().setBlueCarrier(null);
-            GameManager.getGame().redFlagDropped = true;
             if (!e.getDeathMessage().contains("fell out of the world")) {
+                GameManager.getGame().redFlagDropped = true;
+                for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                    s.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Red flag was dropped by " + t.getCustomName());
+                }
                 Block bann = t.getLocation().getBlock().getRelative(BlockFace.SELF);
                 bann.setType(Material.STANDING_BANNER);
                 BlockState bs = bann.getState();
                 Banner banner = (Banner) bs;
+                org.bukkit.material.Banner bannerData = (org.bukkit.material.Banner) banner.getData();
+                bannerData.setFacingDirection(yawToFace(redFlagDropYaw, false));
                 banner.setBaseColor(DyeColor.RED);
                 bs.setData(banner.getData());
                 bs.update();
 
                 this.redFlagDropLocation = t.getLocation();
+                this.redFlagDropYaw = t.getLocation().getYaw();
 
                 this.redleft = 15;
 
@@ -231,7 +274,7 @@ public class OnDeath implements Listener {
                             am.setArms(false);
                             am.setGravity(false);
                             am.setVisible(false);
-                            am.setCustomName(ChatColor.RED + "Returning in" + redleft + "s!");
+                            am.setCustomName(ChatColor.RED + "Returning in: " + redleft + "s!");
                             am.setCustomNameVisible(true);
                             //p.getWorld().spigot().playEffect(p.getEyeLocation(), Effect.TILE_BREAK, 22, 0, ((float) 2), ((float) 2), ((float) 2), 1, 10, 1);
                             redleft--;
@@ -246,13 +289,15 @@ public class OnDeath implements Listener {
                     this.redtask = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
                         public void run() {
 
-                            if (GameManager.getGame().isBlueFlagDropped() == true) {
+                            if (GameManager.getGame().isRedFlagDropped() == true) {
+                                GameManager.getGame().redFlagDropped = false;
                                 double x = OnDeath.redFlagDropLocation.getX();
                                 double y = OnDeath.redFlagDropLocation.getY();
                                 double z = OnDeath.redFlagDropLocation.getZ();
                                 Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] "+ x + " " + y + " " + z);
 
-                                Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
+                                Location defaultRedFlag = new Location(t.getWorld(), 526.5, 76, -502.5);
+                                defaultRedFlag.setYaw((float) 44.5);
 
                                 Block airblock = redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
                                 airblock.setType(Material.AIR);
@@ -262,10 +307,13 @@ public class OnDeath implements Listener {
                                 BlockState bs = bannerblock.getState();
                                 Banner banner = (Banner) bs;
                                 banner.setBaseColor(DyeColor.RED);
+                                org.bukkit.material.Banner bannerData = (org.bukkit.material.Banner) banner.getData();
+                                bannerData.setFacingDirection(yawToFace(defaultRedFlag.getYaw(), false));
                                 bs.setData(banner.getData());
                                 bs.update();
                                 Bukkit.getServer().getScheduler().cancelTask(stopred);
                                 taskList.remove("redFlag");
+                                GameManager.getGame().redFlagDropped = false;
                             }
                         }
                     }, 15 * 20L);
@@ -273,8 +321,11 @@ public class OnDeath implements Listener {
                 taskList.put("redFlag", redtask);
 
             } else {
+                for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                    s.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Red flag was returned to it's base");
+                }
 
-                Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
+                Location defaultRedFlag = new Location(t.getWorld(), 526.5, 76, -502.5);
 
                 Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
                 bannerblock.setType(Material.STANDING_BANNER);
@@ -287,6 +338,11 @@ public class OnDeath implements Listener {
         }
 
         if (e.getDeathMessage().contains("was slain by")) {
+            if (e.getDeathMessage().contains("was slain by Ender")) {
+                e.setDeathMessage(t.getCustomName() + ChatColor.YELLOW + " had their head chopped off by an Ender Dragon!");
+                t.getLocation().getWorld().strikeLightningEffect(t.getLocation());
+                return;
+            }
             this.p = e.getEntity().getKiller();
             e.setDeathMessage(t.getCustomName() + ChatColor.YELLOW + " had their head chopped off by " + p.getCustomName());
 
@@ -368,13 +424,32 @@ public class OnDeath implements Listener {
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent e) {
-        Player player = e.getPlayer();
+        final Player player = e.getPlayer();
 
         if (GameManager.getGame().players.contains(player)) {
-            if (GameManager.getGame().getGameState() != Game.GameState.STARTING || GameManager.getGame().getGameState() != Game.GameState.LOBBY) {
+            if (!GameManager.getGame().isState(Game.GameState.STARTING) || !GameManager.getGame().isState(Game.GameState.LOBBY)) {
+
+                ItemStack stoneSword = new ItemStack(Material.STONE_SWORD,1 );
+                stoneSword.addEnchantment(Enchantment.DAMAGE_ALL, 1);
+                player.getInventory().addItem(stoneSword);
+
+                ItemStack woodenPickaxe = new ItemStack(Material.WOOD_PICKAXE, 1);
+                player.getInventory().addItem(woodenPickaxe);
+
+                ItemStack blocks = new ItemStack(Material.WOOD, 8);
+                player.getInventory().addItem(blocks);
+
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 10, 1));
+
+                player.getInventory().setHelmet(new ItemStack(Material.LEATHER_HELMET));
+                player.getInventory().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE, 1));
+                player.getInventory().setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
+                player.getInventory().setBoots(new ItemStack(Material.LEATHER_BOOTS));
+
+
                 if (GameManager.getGame().getRedTeam().contains(player.getName())) {
                     e.setRespawnLocation(GameManager.getGame().redSpawn);
-                } else if (GameManager.getGame().getGameState() == Game.GameState.STARTING || GameManager.getGame().getGameState() == Game.GameState.LOBBY){
+                } else if (GameManager.getGame().isState(Game.GameState.STARTING) || GameManager.getGame().isState(Game.GameState.LOBBY)) {
                     e.setRespawnLocation(GameManager.getGame().lobbyPoint);
                 } else {
                     e.setRespawnLocation(GameManager.getGame().blueSpawn);
@@ -382,6 +457,27 @@ public class OnDeath implements Listener {
             } else {
                 e.setRespawnLocation(GameManager.getGame().lobbyPoint);
             }
+        }
+        spawnProt.add(player.getName());
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+            public void run() {
+                spawnProt.remove(player.getName());
+            }
+        }, 5 * 20L);
+    }
+
+    public BlockFace[] axis = { BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST };
+    public BlockFace[] radial = { BlockFace.NORTH, BlockFace.NORTH_EAST, BlockFace.EAST, BlockFace.SOUTH_EAST, BlockFace.SOUTH, BlockFace.SOUTH_WEST, BlockFace.WEST, BlockFace.NORTH_WEST };
+
+    public BlockFace yawToFace(float yaw) {
+        return yawToFace(yaw, true);
+    }
+
+    public BlockFace yawToFace(float yaw, boolean useSubCardinalDirections) {
+        if (useSubCardinalDirections) {
+            return radial[Math.round(yaw / 45f) & 0x7];
+        } else {
+            return axis[Math.round(yaw / 90f) & 0x3];
         }
     }
 }

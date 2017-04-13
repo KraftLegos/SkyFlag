@@ -38,7 +38,7 @@ public class OnInteractEvent implements Listener {
             e.setCancelled(true);
         }
 
-        if ((GameManager.getGame().getGameState() != Game.GameState.LOBBY) && (GameManager.getGame().getGameState() != Game.GameState.STARTING) && (GameManager.getGame().getGameState() != Game.GameState.ENDING)) {
+        if ((GameManager.getGame().getGameState() != Game.GameState.LOBBY) && (GameManager.getGame().getGameState() != Game.GameState.STARTING) && (GameManager.getGame().getGameState() != Game.GameState.ENDING) && (GameManager.getGame().getGameState() != Game.GameState.GRACE)) {
             if (e.getClickedBlock().getType() == Material.STANDING_BANNER) {
                 Banner meta = (Banner) e.getClickedBlock().getState();
                 Material banner = e.getClickedBlock().getType();
@@ -56,8 +56,20 @@ public class OnInteractEvent implements Listener {
                     e.getClickedBlock().setType(Material.AIR);
                     GameManager.getGame().setRedCarrier(p);
 
-                    for (String s : GameManager.getGame().getBlueTeam()) {
-                        Bukkit.getServer().getPlayer(s).sendMessage("YOUR FLAG WAS STOLEN BY " + p.getCustomName());
+                    if (GameManager.getGame().blueFlagDropped == true) {
+                        Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopblue);
+                        double x = OnDeath.blueFlagDropLocation.getX();
+                        double y = OnDeath.blueFlagDropLocation.getY();
+                        double z = OnDeath.blueFlagDropLocation.getZ();
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
+                        GameManager.getGame().blueFlagDropped = false;
+                        for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                            s.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Blue flag was picked up by " + p.getCustomName());
+                        }
+                    } else {
+                        for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                            s.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "Blue flag was stolen by " + p.getCustomName());
+                        }
                     }
 
                     PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(p.getEntityId(), 4, CraftItemStack.asNMSCopy(itemStack));
@@ -125,8 +137,20 @@ public class OnInteractEvent implements Listener {
                     e.getClickedBlock().setType(Material.AIR);
                     GameManager.getGame().setBlueCarrier(p);
 
-                    for (String s : GameManager.getGame().getRedTeam()) {
-                        Bukkit.getServer().getPlayer(s).sendMessage("YOUR FLAG WAS STOLEN BY " + p.getCustomName());
+                    if (GameManager.getGame().redFlagDropped == true) {
+                        Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopred);
+                        //double x = OnDeath.redFlagDropLocation.getX();
+                        //double y = OnDeath.redFlagDropLocation.getY();
+                        //double z = OnDeath.redFlagDropLocation.getZ();
+                       // Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=ArmorStand] " + x + " " + y + " " + z);
+                        GameManager.getGame().redFlagDropped = false;
+                        for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                            s.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Red flag was picked up by " + p.getCustomName());
+                        }
+                    } else {
+                        for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                            s.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Red flag was stolen by " + p.getCustomName());
+                        }
                     }
 
                     PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(p.getEntityId(), 4, CraftItemStack.asNMSCopy(itemStack));
@@ -185,6 +209,9 @@ public class OnInteractEvent implements Listener {
                 } else if (GameManager.getGame().getBlueTeam().contains(p.getName()) && meta.getBaseColor() == DyeColor.BLUE) {
                     if (GameManager.getGame().isBlueFlagDropped() == true) {
                         if (GameManager.getGame().getBlueCarrier() != p) {
+                            for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                                s.sendMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "Blue flag was returned to it's base by " + p.getCustomName());
+                            }
                             Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopblue);
                             double x = OnDeath.blueFlagDropLocation.getX();
                             double y = OnDeath.blueFlagDropLocation.getY();
@@ -200,10 +227,11 @@ public class OnInteractEvent implements Listener {
                             b.setBaseColor(DyeColor.BLUE);
                             bs.setData(b.getData());
                             bs.update();
+                            GameManager.getGame().blueFlagDropped = false;
                         }
                         }else {
                         if (GameManager.getGame().getBlueCarrier() == p) {
-                            GameManager.getGame().sendMessage("Blue team captured a flag!");
+                            GameManager.getGame().sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "The red flag was captured by " + p.getCustomName());
                             ItemStack helmet = p.getInventory().getHelmet();
 
                             PacketPlayOutEntityEquipment entityEquipment = new PacketPlayOutEntityEquipment(p.getEntityId(), 4, CraftItemStack.asNMSCopy(helmet));
@@ -214,10 +242,8 @@ public class OnInteractEvent implements Listener {
 
                             GameManager.getGame().sendBlueMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
                             GameManager.getGame().addBluePoints(100);
-/*
+
                             Location defaultRedFlag = new Location(p.getWorld(), 526.5, 76, -502.5);
-                            Block airblock = OnDeath.blueFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
-                            airblock.setType(Material.AIR);
                             Block bannerblock = defaultRedFlag.getBlock().getRelative(BlockFace.SELF);
                             bannerblock.setType(Material.STANDING_BANNER);
                             BlockState bs = bannerblock.getState();
@@ -225,13 +251,15 @@ public class OnInteractEvent implements Listener {
                             b.setBaseColor(DyeColor.RED);
                             bs.setData(b.getData());
                             bs.update();
-*/
                             return;
                         }
                     }
                 } else if (GameManager.getGame().getRedTeam().contains(p.getName()) && meta.getBaseColor() == DyeColor.RED) {
                     if (GameManager.getGame().isRedFlagDropped() == true) {
                         if (GameManager.getGame().getRedCarrier() != p) {
+                            for (Player s : Bukkit.getServer().getOnlinePlayers()) {
+                                s.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Red flag was returned to it's base by " + p.getCustomName());
+                            }
                             Bukkit.getServer().getScheduler().cancelTask(OnDeath.stopred);
                             double x = OnDeath.redFlagDropLocation.getX();
                             double y = OnDeath.redFlagDropLocation.getY();
@@ -247,6 +275,7 @@ public class OnInteractEvent implements Listener {
                             b.setBaseColor(DyeColor.RED);
                             bs.setData(b.getData());
                             bs.update();
+                            GameManager.getGame().redFlagDropped = false;
                         }
                     } else {
                         if (GameManager.getGame().getRedCarrier() == p) {
@@ -258,15 +287,13 @@ public class OnInteractEvent implements Listener {
                             }
 
 
-                            GameManager.getGame().sendMessage("Red team captured a flag!");
+                            GameManager.getGame().sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "The red flag was captured by " + p.getCustomName());
 
                             GameManager.getGame().sendRedMessage(ChatColor.GOLD + "(+ 100 TeamPoints)");
                             GameManager.getGame().addRedPoints(100);
 
-                            /*
+
                             Location defaultBlueFlag = new Location(p.getWorld(), 698.5, 76, -390.5);
-                            Block airblock = OnDeath.redFlagDropLocation.getBlock().getRelative(BlockFace.SELF);
-                            airblock.setType(Material.AIR);
                             Block bannerblock = defaultBlueFlag.getBlock().getRelative(BlockFace.SELF);
                             bannerblock.setType(Material.STANDING_BANNER);
                             BlockState bs = bannerblock.getState();
@@ -274,7 +301,6 @@ public class OnInteractEvent implements Listener {
                             b.setBaseColor(DyeColor.BLUE);
                             bs.setData(b.getData());
                             bs.update();
-*/
                             GameManager.getGame().setRedCarrier(null);
                             return;
                         }

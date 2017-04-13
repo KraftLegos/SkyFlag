@@ -1,8 +1,6 @@
 package com.github.kraftlegos;
 
-import com.github.kraftlegos.commands.End;
-import com.github.kraftlegos.commands.ForceStart;
-import com.github.kraftlegos.commands.Join;
+import com.github.kraftlegos.commands.*;
 import com.github.kraftlegos.listeners.*;
 import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
@@ -45,13 +43,18 @@ public final class Main extends JavaPlugin {
         //pm.registerEvents(new OnHelmetChange(), this);
         pm.registerEvents(new OnMove(), this);
         pm.registerEvents(new OnItemPickup(), this);
+        pm.registerEvents(new OnBlockPlace(), this);
+        pm.registerEvents(new OnChat(), this);
+        pm.registerEvents(new OnBlockBreak(), this);
 
+        getCommand("shout").setExecutor(new Shout());
         getCommand("join").setExecutor(new Join());
         getCommand("forcestart").setExecutor(new ForceStart());
         getCommand("end").setExecutor(new End());
+        getCommand("forceadd").setExecutor(new ForceAdd());
         getLogger();
 
-        Game game = new Game("one");
+        Game game = new Game(instance, "one");
         GameManager.setGame(game);
         this.registerGame(game);
         game.setState(Game.GameState.LOBBY);
@@ -59,7 +62,7 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("line").unregister();
+        if (Bukkit.getServer().getScoreboardManager().getMainScoreboard() != null) Bukkit.getServer().getScoreboardManager().getMainScoreboard().getObjective("line").unregister();
 
         instance = null;
 

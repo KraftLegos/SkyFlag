@@ -3,6 +3,7 @@ package com.github.kraftlegos.listeners;
 import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.object.Game;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -15,7 +16,12 @@ public class OnFoodChange implements Listener {
 
     @EventHandler
     public void onFoodChange(FoodLevelChangeEvent e) {
-        if (GameManager.getGame().getGameState() == Game.GameState.LOBBY || GameManager.getGame().getGameState() == Game.GameState.GRACE || GameManager.getGame().getGameState() == Game.GameState.STARTING) {
+        if (GameManager.getGame().isState(Game.GameState.ENDING) || GameManager.getGame().isState(Game.GameState.STARTING) || GameManager.getGame().isState(Game.GameState.LOBBY)) {
+            e.setCancelled(true);
+        }
+
+        Player p = (Player) e.getEntity();
+        if (GameManager.getGame().spectators.contains(p)) {
             e.setCancelled(true);
         }
     }
