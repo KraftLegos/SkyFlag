@@ -42,7 +42,7 @@ public class OnDeath implements Listener {
 
     public static ArrayList<String> spawnProt = new ArrayList<>();
 
-    private HashMap<String, Integer> taskList = new HashMap<>();
+    private final HashMap<String, Integer> taskList = new HashMap<>();
     private ArrayList<Integer> respawnTaskList = new ArrayList<>();
     private Player t;
     private Player p;
