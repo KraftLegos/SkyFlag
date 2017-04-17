@@ -14,6 +14,7 @@ import org.bukkit.scoreboard.*;
 public class OnJoin implements Listener {
 
     @SuppressWarnings("unused")
+
     public Scoreboard board = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
     public Team redTeam;
     public Team blueTeam;
@@ -23,7 +24,7 @@ public class OnJoin implements Listener {
     public void onPlayerJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
 
-        e.getPlayer().setCustomName(ChatColor.GRAY + e.getPlayer().getName());
+        GameManager.getGame().findHypixelPlayer(p);
         e.setJoinMessage(null);
 
         if (board == null) {
@@ -71,9 +72,7 @@ public class OnJoin implements Listener {
         p.getInventory().clear();
         p.getInventory().setArmorContents(null);
 
-        GamePlayer g = new GamePlayer(p);
 
-        GameManager.getGame().joinGame(g);
     }
 
     @EventHandler

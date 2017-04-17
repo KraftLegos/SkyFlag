@@ -82,7 +82,7 @@ public class OnDeath implements Listener {
         t.getInventory().remove(Material.WOOD_PICKAXE);
         t.updateInventory();
 
-        if (GameManager.getGame().getRedCarrier() != null) {
+        /*if (GameManager.getGame().getRedCarrier() != null) {
             Game.TeamType teamType = GameManager.getGame().getPlayerTeams().get(t.getUniqueId());
 
             ItemStack itemStack = new ItemStack(Material.BANNER,1 );
@@ -98,9 +98,9 @@ public class OnDeath implements Listener {
                     ((CraftPlayer) pl).getHandle().playerConnection.sendPacket(entityEquipment);
                 }
             }
-        }
+        }*/
 
-        if (GameManager.getGame().getBlueCarrier() != null) {
+        /*if (GameManager.getGame().getBlueCarrier() != null) {
             if (GameManager.getGame().getRedCarrier() != null) {
                 Game.TeamType teamType = GameManager.getGame().getPlayerTeams().get(t.getUniqueId());
 
@@ -118,7 +118,7 @@ public class OnDeath implements Listener {
                     }
                 }
             }
-        }
+        }*/
 
         //if (GameManager.getGame().getGameState() != Game.GameState.STARTING && GameManager.getGame().getGameState() != Game.GameState.LOBBY){
             if (GameManager.getGame().spectators.contains(t)) {

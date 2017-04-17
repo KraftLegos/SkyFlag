@@ -1,9 +1,18 @@
 package com.github.kraftlegos.object;
 
 import com.github.kraftlegos.Main;
+import com.github.kraftlegos.managers.GameManager;
 import com.github.kraftlegos.utility.EndCounter;
 import com.github.kraftlegos.utility.StartCountdown;
 import com.github.kraftlegos.utility.StartGraceCountdown;
+
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.async.Callback;
+import com.mashape.unirest.request.HttpRequest;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.exceptions.UnirestException;
+
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
@@ -18,6 +27,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.scoreboard.*;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -87,6 +97,7 @@ public class Game {
 
     //Others
     private GameState gameState;
+    private GameType gameType;
 
     public Scoreboard board = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
 
@@ -111,6 +122,7 @@ public class Game {
         this.minPlayers = 13;
         this.world = Bukkit.getServer().getWorld("world");
         this.isTeamGame = true;
+        this.gameType = GameType.NORMAL;
 
         double redx = 567.5;
         double redy = 83;
@@ -143,6 +155,89 @@ public class Game {
         this.redSpawn = redSpawn;
         this.blueSpawn = blueSpawn;
         this.lobbyPoint = lobbySpawn;
+    }
+
+    public void findHypixelPlayer(final Player hypixelPlayer) {
+        HttpRequest request = Unirest.get("https://api.hypixel.net/player")
+                .queryString("key", "f3493e24-dae9-4fd5-a502-b90caa6d968e")
+                .queryString("uuid", hypixelPlayer.getUniqueId().toString());
+
+        request.asJsonAsync(new Callback<JsonNode>() {
+            @Override
+            public void completed(HttpResponse<JsonNode> httpResponse) {
+                JSONObject apiResponse = httpResponse.getBody().getObject();
+                if (apiResponse.isNull("player")) {
+                    // Invalid Hypixel player. Handle how you choose to.
+                    return;
+                }
+
+                apiResponse = apiResponse.getJSONObject("player");
+
+
+
+                ChatColor plusColor = null;
+                String prefix = null;
+                GamePlayer g = new GamePlayer(hypixelPlayer);
+
+
+
+                String hypixelRank = (apiResponse.has("rank") ? apiResponse.getString("rank") : "NONE");
+                if (apiResponse.has("rank")) {
+
+                    if (hypixelRank.equals("ADMIN")) {
+                        hypixelPlayer.setCustomName(ChatColor.RED + "[ADMIN] " + hypixelPlayer.getDisplayName());
+                        GameManager.getGame().joinGame(g);
+                    }
+                    if (hypixelRank.equals("MODERATOR")) {
+                        hypixelPlayer.setCustomName(ChatColor.DARK_GREEN + "[MOD] " + hypixelPlayer.getDisplayName());
+                        GameManager.getGame().joinGame(g);
+                    }
+                    if (hypixelRank.equals("HELPER")) {
+                        hypixelPlayer.setCustomName(ChatColor.DARK_BLUE + "[HELPER] " + hypixelPlayer.getDisplayName());
+                        GameManager.getGame().joinGame(g);
+                    }
+                    if (hypixelRank.equals("MVP")) {
+                        hypixelPlayer.setCustomName(ChatColor.AQUA + "[MVP] " + hypixelPlayer.getDisplayName());
+                        GameManager.getGame().joinGame(g);
+                    }
+                    if (hypixelRank.equals("VIP")) {
+                        hypixelPlayer.setCustomName(ChatColor.GREEN + "[VIP] " + hypixelPlayer.getDisplayName());
+                        GameManager.getGame().joinGame(g);
+                    }
+                    if (hypixelRank.equals("VIP_PLUS")) {
+                        hypixelPlayer.setCustomName(ChatColor.GREEN + "[VIP" + ChatColor.GOLD + "+" + "] " + hypixelPlayer.getDisplayName());
+                        GameManager.getGame().joinGame(g);
+                    }
+                } else {
+                    hypixelPlayer.setCustomName(ChatColor.GRAY + hypixelPlayer.getDisplayName());
+                    GameManager.getGame().joinGame(g);
+                }
+
+                if (apiResponse.getString("rank").equals("MVP_PLUS")) {
+                    if (apiResponse.has("rankPlusColor")) {
+                        plusColor = ChatColor.valueOf(apiResponse.getString("rankPlusColor"));
+                        hypixelPlayer.setCustomName(ChatColor.AQUA + "[MVP" + plusColor + "+" + ChatColor.AQUA + "] " + hypixelPlayer.getDisplayName());
+                        GameManager.getGame().joinGame(g);
+                    }
+                }
+
+                String oldPackageRank = (apiResponse.has("packageRank") ? apiResponse.getString("packageRank") : "DEFAULT");
+                String newPackageRank = (apiResponse.has("newPackageRank") ? apiResponse.getString("newPackageRank") : "DEFAULT");
+                // Handle response some how
+            }
+
+            @Override
+            public void failed(UnirestException e) {
+                // Handle request error some how
+            }
+
+            @Override
+            public void cancelled() {
+
+            }
+        });
+
+
     }
 
     public void joinGame(GamePlayer gamePlayer) {
@@ -327,73 +422,77 @@ public class Game {
 
     public void startGame() {
 
-        for (Player player : players) {
-            ItemStack stoneSword = new ItemStack(Material.STONE_SWORD,1 );
-            stoneSword.addEnchantment(Enchantment.DAMAGE_ALL, 1);
-            player.getInventory().addItem(stoneSword);
+        if (gameType != GameType.GODGAME) {
+            for (Player player : players) {
+                ItemStack stoneSword = new ItemStack(Material.STONE_SWORD, 1);
+                stoneSword.addEnchantment(Enchantment.DAMAGE_ALL, 1);
+                player.getInventory().addItem(stoneSword);
 
-            ItemStack woodenPickaxe = new ItemStack(Material.WOOD_PICKAXE, 1);
-            player.getInventory().addItem(woodenPickaxe);
+                ItemStack woodenPickaxe = new ItemStack(Material.WOOD_PICKAXE, 1);
+                player.getInventory().addItem(woodenPickaxe);
 
-            ItemStack blocks = new ItemStack(Material.WOOD, 8);
-            player.getInventory().addItem(blocks);
+                ItemStack blocks = new ItemStack(Material.WOOD, 8);
+                player.getInventory().addItem(blocks);
 
-            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 10, 1));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 10, 1));
 
-            player.getInventory().setHelmet(new ItemStack(Material.LEATHER_HELMET));
-            player.getInventory().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE, 1));
-            player.getInventory().setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
-            player.getInventory().setBoots(new ItemStack(Material.LEATHER_BOOTS));
-        }
-
-        int i = 0;
-        Scoreboard b = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
-
-        this.line2 = objective.getScore(ChatColor.GREEN + "Players: " + players.size());
-        line2.setScore(6);
-
-        board.resetScores(ChatColor.GREEN + "Players: " + players.size() + "/" + getMaxPlayers());
-        board.resetScores("Waiting...");
-
-        redScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("RED");
-        blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
-        setState(GameState.GRACE);
-        startGracePeriod();
-        addNormalChestItems();
-
-        for (Player p : players) {
-
-            //if(p.getGameMode() != GameMode.SURVIVAL) p.setGameMode(GameMode.SURVIVAL);
-
-            if (i < players.size() / 2) {
-                addToTeam(TeamType.RED, p);
-
-                //TODO PacketPlayOutScoreboardTeam packetPlayOutScoreboardTeam = new PacketPlayOutScoreboardTeam();
-
-                redScoreTeam.addEntry(p.getName());
-                redScoreTeam.setPrefix("§c[R] ");
-                for (Player online : Bukkit.getOnlinePlayers()) {
-                    online.setScoreboard(b);
-                }
-                p.teleport(redSpawn);
-                p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "Please wait while we move players! You will have a 2 minute grace period when the game begins!");
-                p.sendMessage(ChatColor.RED + "You are now on the RED team!");
-                p.playSound(p.getLocation(), Sound.NOTE_PLING, 1.0F, 1.200F);
-
-            } else {
-                addToTeam(TeamType.BLUE, p);
-                blueScoreTeam.addEntry(p.getName());
-                blueScoreTeam.setPrefix("§9[B] ");
-                for (Player online : Bukkit.getOnlinePlayers()) {
-                    online.setScoreboard(b);
-                }
-                p.teleport(blueSpawn);
-                p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "Please wait while we move players! You will have a 2 minute grace period when the game begins!");
-                p.sendMessage(ChatColor.BLUE + "You are now on the blue team!");
-                p.playSound(p.getLocation(), Sound.NOTE_PLING, 1.0F, 1.200F);
-
+                player.getInventory().setHelmet(new ItemStack(Material.LEATHER_HELMET));
+                player.getInventory().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE, 1));
+                player.getInventory().setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
+                player.getInventory().setBoots(new ItemStack(Material.LEATHER_BOOTS));
             }
-            i++;
+
+            int i = 0;
+            Scoreboard b = Bukkit.getServer().getScoreboardManager().getMainScoreboard();
+
+            this.line2 = objective.getScore(ChatColor.GREEN + "Players: " + players.size());
+            line2.setScore(6);
+
+            board.resetScores(ChatColor.GREEN + "Players: " + players.size() + "/" + getMaxPlayers());
+            board.resetScores("Waiting...");
+
+            redScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("RED");
+            blueScoreTeam = Bukkit.getServer().getScoreboardManager().getMainScoreboard().getTeam("BLUE");
+            setState(GameState.GRACE);
+            startGracePeriod();
+            addNormalChestItems();
+
+            for (Player p : players) {
+
+                //if(p.getGameMode() != GameMode.SURVIVAL) p.setGameMode(GameMode.SURVIVAL);
+
+                if (i < players.size() / 2) {
+                    addToTeam(TeamType.RED, p);
+
+                    //TODO PacketPlayOutScoreboardTeam packetPlayOutScoreboardTeam = new PacketPlayOutScoreboardTeam();
+
+                    redScoreTeam.addEntry(p.getName());
+                    redScoreTeam.setPrefix("§c[R] ");
+                    for (Player online : Bukkit.getOnlinePlayers()) {
+                        online.setScoreboard(b);
+                    }
+                    p.teleport(redSpawn);
+                    p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "Please wait while we move players! You will have a 2 minute grace period when the game begins!");
+                    p.sendMessage(ChatColor.RED + "You are now on the RED team!");
+                    p.playSound(p.getLocation(), Sound.NOTE_PLING, 1.0F, 1.200F);
+
+                } else {
+                    addToTeam(TeamType.BLUE, p);
+                    blueScoreTeam.addEntry(p.getName());
+                    blueScoreTeam.setPrefix("§9[B] ");
+                    for (Player online : Bukkit.getOnlinePlayers()) {
+                        online.setScoreboard(b);
+                    }
+                    p.teleport(blueSpawn);
+                    p.sendMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "Please wait while we move players! You will have a 2 minute grace period when the game begins!");
+                    p.sendMessage(ChatColor.BLUE + "You are now on the blue team!");
+                    p.playSound(p.getLocation(), Sound.NOTE_PLING, 1.0F, 1.200F);
+
+                }
+                i++;
+            }
+        } else if (gameType == GameType.GODGAME) {
+            //TODO Start the game in GODGAME mode
         }
     }
 
@@ -468,6 +567,7 @@ public class Game {
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
             public void run() {
+                board.resetScores("Last Chest Reset: " + ChatColor.YELLOW + "1s");
                 board.resetScores("Last Chest Reset: " + ChatColor.YELLOW + "0s");
                 tenMinRefill();
                 Bukkit.getServer().getScheduler().cancelTask(lastRifillCountdown);
@@ -497,6 +597,7 @@ public class Game {
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
             public void run() {
+                board.resetScores("Deathmatch in: " + ChatColor.YELLOW + "1s");
                 board.resetScores("Deathmatch in: " + ChatColor.YELLOW + "0s");
                 deathMatch();
                 Bukkit.getServer().getScheduler().cancelTask(deathmatchCountdown);
@@ -514,11 +615,6 @@ public class Game {
         endCountdown = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
             public void run() {
 
-                if (endCountdownTimer == 150) {
-                    spawnDragon();
-                    sendMessage(ChatColor.YELLOW + "+1 " + ChatColor.BLUE + "Dragon!");
-                }
-
                 int time = endCountdownTimer + 1;
 
                 board.resetScores("Game End: " + ChatColor.YELLOW + "0s");
@@ -534,6 +630,7 @@ public class Game {
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
 
             public void run() {
+                board.resetScores("Game End: " + ChatColor.YELLOW + "1s");
                 board.resetScores("Game End: " + ChatColor.YELLOW + "0s");
                 end();
                 Bukkit.getServer().getScheduler().cancelTask(endCountdown);
@@ -1320,5 +1417,10 @@ public class Game {
     public enum TeamType {
         RED, BLUE
     }
+
+    public enum GameType {
+        GODGAME, NORMAL, EASY
+    }
+
 
 }

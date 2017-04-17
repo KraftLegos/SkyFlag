@@ -31,12 +31,13 @@ public class StartCountdown implements Runnable{
 
                 if (timeUntilStart == 0) {
                     //GameManager.getGame().sendMessage(ChatColor.GREEN + "DEBUG: STARTED");
-                    GameManager.getGame().startGame();
+                    //GameManager.getGame().startGame();
                     scoreboard.resetScores( "0s until start!");
                     scoreboard.resetScores("0 until start!");
                     scoreboard.resetScores(ChatColor.GREEN + "Players: " + (GameManager.getGame().players.size()) + "/" + GameManager.getGame().getMaxPlayers());
                     GameManager.getGame().line2 = GameManager.getGame().objective.getScore( ChatColor.GREEN + "Players: " + GameManager.getGame().players.size());
                     GameManager.getGame().line2.setScore(6);
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "forcestart");
                     break;
 
                 }
